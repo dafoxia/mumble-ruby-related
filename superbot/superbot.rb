@@ -102,232 +102,246 @@ class MumbleMPD
 				if msg.message.start_with?("#{controlstring}")
 					message = msg.message.split(controlstring)[1] #Remove controlstring
 					
-					if message == 'help'
-						cc = controlstring
-						@cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
-								  + "<br />" \
-						                  + "<u>Controls:</u><br />" \
-						                  + "#{cc}<b>play</b> Start playing.<br />" \
-						                  + "#{cc}<b>pp</b> Toogle play/pause.<br />" \
-						                  + "#{cc}<b>next</b> Play next song in the playlist.<br />" \
-						                  + "#{cc}<b>stop</b> Stop the playlist.<br />" \
-								  + "#{cc}<b>seek</b> Seek to a position.<br />" \
-						                  + "<br />" \
-          						          + "<u>Volume:</u><br />" \
-						                  + "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
-						                  + "#{cc}<b>v+</b> Increase volume by 5%.<br />" \
-						                  + "#{cc}<b>v-</b> Decrease volume by 5%.<br />" \
-						                  + "#{cc}<b>v++</b> Increase volume by 10%.<br />" \
-						                  + "#{cc}<b>v--</b> Decrease volume by 10%.<br />" \
-						                  + "<br />" \
-						                  + "<u>Settings:</u><br />" \
-						                  + "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
-						                  + "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
-						                  + "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
-								  + "#{cc}<b>single</b> Toogle mpd´s single mode.<br />" \
-						                  + "<br />" \
-								  + "<u>Playlists:</u><br />" \
-						                  + "#{cc}<b>playlists</b> Show a list of all playlists.<br />" \
-						                  + "#{cc}<b>playlist <i>number</i></b> Load the playlist and start it. Use #{cc}playlists to get a list of all playlists.<br />" \
-								  + "#{cc}<b>clear</b> Clears the current queue.<br />" \
-						                  + "<br />" \
-								  + "<u>Specials:</u><br />" \
-						                  + "#{cc}<b>gotobed</b> Let the bot mute and deaf himself and pause the playlist.<br />" \
-						                  + "#{cc}<b>wakeup</b> The opposite of gotobed.<br />" \
-						                  + "#{cc}<b>ch</b> Let the bot switch into your channel.<br />" \
-								  + "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
-								  + "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
-						                  + "#{cc}<b>help</b> Shows this help.<br />")
-					end
-					#if message == 'goback'
-					#	@cli.join_channel(@previouschannel)
-					#end
-					if message == 'ch'
-						usermessagefrom = @cli.users[msg.actor]
-						channeluserisin = usermessagefrom["channel_id"]
-
-						if @cli.current_channel["channel_id"].to_i == channeluserisin.to_i
-							@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
-						else
-							@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
-							@cli.join_channel(channeluserisin)							
-						end
-					end
-					if message == 'debug'
-						#@cli.text_user(msg.actor, "#{@cli.users}")
-						#@cli.text_user(msg.actor, "#{@cli.users.values.find { |x| x.session == msg.session }}")
-						#comesfromuser = @cli.users[msg.session]
-						#temp = @cli.users[msg.actor]
-						#puts temp.inspect
-						#puts @cli.users.values.find { |x| x.session == msg.actor }
-						#comesfromuser_session= @cli.users.values.find { |x| x.session == msg.session }
-						#puts comesfromuser_session.inspect
-						#comesfromuser = @cli.users[comesfromuser_session]
-						#puts comesfromuser.inspect
-						#@cli.text_user(msg.actor, "#{comesfromuser_session}, #{comesfromuser}")
-						#channelfrom = comesfromuser.channel_id
-						#@cli.join_channel(channelfrom)
-						@cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
-					end
-					#if message.match(/^seek [0-9]{1,5}$/)
-					#	seekto = message.match(/^seek ([0-9]{1,5})$/)[1]
-					#	puts seekto
-					#	@mpd.seek(seekto)
-					#end
-					if message == 'next'
-						@mpd.next
-					end
-					if message == 'prev'
-						@mpd.previous
-					end
-					if message == 'gotobed'
-						#@cli.join_channel(@mumbleserver_targetchannel)
-						@mpd.pause = true
-						@cli.deafen true
-					end
-					if message == 'wakeup'
-						#@cli.join_channel(@mumbleserver_targetchannel)
-						@mpd.pause = false
-						@cli.deafen false
-						@cli.mute false
-					end
-					if message.match(/^v [0-9]{1,3}$/)
-						volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
-						
-						if (volume >=0 ) && (volume <= 100)
-							@mpd.volume = volume
-						else
-							@cli.text_user(msg.actor, "Volume can be within a range of 0 to 100")
-						end
-							
-					end
-					if message == 'v-'
-						volume = ((@mpd.volume).to_i - 5)
-						if volume < 0
-							#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
-							volume = 0
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'v--'
-						volume = ((@mpd.volume).to_i - 10)
-						if volume < 0
-							#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
-							volume = 0
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'v+'
-						volume = ((@mpd.volume).to_i + 5)
-						if volume > 100
-							#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
-							volume = 100
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'v++'
-						volume = ((@mpd.volume).to_i + 10)
-						if volume > 100
-							#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
-							volume = 100
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'clear'
-						@mpd.clear
-						@cli.text_user(msg.actor, "The playqueue was cleared.")
-					end
-					if message == 'kaguBe' || message == '42'
-						@cli.text_user(msg.actor, "<a href='http://wiki.natenom.de/sammelsurium/kagube'>All glory to kaguBe!</a>")
-					end
-					if message == 'random'
-						@mpd.random = !@mpd.random?
-					end
-					if message == 'repeat'
-						@mpd.repeat = !@mpd.repeat?
-					end
-					if message == 'single'
-						@mpd.single = !@mpd.single?
-					end
-					if message == 'consume'
-						@mpd.consume = !@mpd.consume?
-					end
-					if message == 'pp'
-						@mpd.pause = !@mpd.paused?
-					end
-					if message == 'stop'
-						@mpd.stop
-					end
-					if message == 'play'
-						@mpd.play
-						@cli.deafen false
-						@cli.mute false
-					end
-					if message == 'playlists'
-						text_out = ""
-						counter = 0
-						@mpd.playlists.each do |playlist|
-							text_out = text_out + "#{counter} - #{playlist.name}<br/>"
-							counter = counter + 1
-						end
-						
-						@cli.text_user(msg.actor, "I know the following playlists:<br />#{text_out}")
-					end
-					#if message.match(/^playlist [a-z0-9][^\w]$/)
-					if message.match(/^playlist [0-9]{1,3}.*$/)
-						playlist_id = message.match(/^playlist ([0-9]{1,3})$/)[1].to_i
-						
-						begin
-							playlist = @mpd.playlists[playlist_id]
-							@mpd.clear
-							playlist.load
-							@mpd.play
-							@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
-						rescue
-							@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
-						end
-						
-						#if (playlist = @mpd.playlists[playlist_id]) #I am sure there is a better way :)
-						#	playlist = @mpd.playlists[playlist_id]
-						#	@mpd.clear
-						#	playlist.load
-						#	@mpd.play
-						#	@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
-						#else
-						#	@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
-						#end
+					#initialize
+					message_is_from_unregistered_user = false
 					
-						#If name was given, use this ... do later and distinct between number and name ...
-						#playlist_name = message.match(/^playlist (.*)$/)[1]
-						#@mpd.playlists.each do |playlist|
-						#	if playlist.name == playlist_name
-						#		@mpd.clear
-						#		playlist.load
-						#		@mpd.play
-						#	end
+					#Some of the next two information we may need later...
+					user_who_sent_message = @cli.users[msg.actor]
+					
+					#This is hacky because mumble uses -1 for user_id of unregistered users,
+					# while mumble-ruby seems to just omit the value for unregistered users.
+					# With this hacky thing commands from SuperUser are also being ignored.
+					if user_who_sent_message["user_id"].to_i == 0
+						message_is_from_unregistered_user = true
+					end
+					
+					if message_is_from_unregistered_user == false #do not accept commands from unregistered users.
+						if message == 'help'
+							cc = controlstring
+							@cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
+									+ "<br />" \
+									+ "<u>Controls:</u><br />" \
+									+ "#{cc}<b>play</b> Start playing.<br />" \
+									+ "#{cc}<b>pp</b> Toogle play/pause.<br />" \
+									+ "#{cc}<b>next</b> Play next song in the playlist.<br />" \
+									+ "#{cc}<b>stop</b> Stop the playlist.<br />" \
+									+ "#{cc}<b>seek</b> Seek to a position.<br />" \
+									+ "<br />" \
+									+ "<u>Volume:</u><br />" \
+									+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
+									+ "#{cc}<b>v+</b> Increase volume by 5%.<br />" \
+									+ "#{cc}<b>v-</b> Decrease volume by 5%.<br />" \
+									+ "#{cc}<b>v++</b> Increase volume by 10%.<br />" \
+									+ "#{cc}<b>v--</b> Decrease volume by 10%.<br />" \
+									+ "<br />" \
+									+ "<u>Settings:</u><br />" \
+									+ "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
+									+ "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
+									+ "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
+									+ "#{cc}<b>single</b> Toogle mpd´s single mode.<br />" \
+									+ "<br />" \
+									+ "<u>Playlists:</u><br />" \
+									+ "#{cc}<b>playlists</b> Show a list of all playlists.<br />" \
+									+ "#{cc}<b>playlist <i>number</i></b> Load the playlist and start it. Use #{cc}playlists to get a list of all playlists.<br />" \
+									+ "#{cc}<b>clear</b> Clears the current queue.<br />" \
+									+ "<br />" \
+									+ "<u>Specials:</u><br />" \
+									+ "#{cc}<b>gotobed</b> Let the bot mute and deaf himself and pause the playlist.<br />" \
+									+ "#{cc}<b>wakeup</b> The opposite of gotobed.<br />" \
+									+ "#{cc}<b>ch</b> Let the bot switch into your channel.<br />" \
+									+ "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
+									+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
+									+ "#{cc}<b>help</b> Shows this help.<br />")
+						end
+						#if message == 'goback'
+						#	@cli.join_channel(@previouschannel)
 						#end
-					end
-					if message == 'status'
-						status = @mpd.status
-						@cli.text_user(msg.actor, "Sorry, this is still the raw message I get from mpd...:<br />#{status.inspect}")
-					end
-					if message.match(/[fF][uU][cC][kK]/)
-						@cli.text_user(msg.actor, "Fuck is an English-language word, a profanity which refers to the act of sexual intercourse and is also commonly used to denote disdain or as an intensifier. Its origin is obscure; it is usually considered to be first attested to around 1475, but may be considerably older. In modern usage, the term fuck and its derivatives (such as fucker and fucking) can be used in the position of a noun, a verb, an adjective or an adverb.<br />Source: <a href='http://en.wikipedia.org/wiki/Fuck'>Wikipedia</a>")
-					end
-					if message == 'file'
-						current = @mpd.current_song
-						@cli.text_user(msg.actor, "Filename of currently played song:<br />#{current.file}</span>")
-					end
-					if message == 'song'
-						current = @mpd.current_song
-						if not current.nil? #Would crash if playlist was empty.
-							@cli.text_user(msg.actor, "#{current.artist} - #{current.title} (#{current.album})")
-						else
-							@cli.text_user(msg.actor, "No song is played currently.")
+						if message == 'ch'
+							channeluserisin = user_who_sent_message["channel_id"]
+
+							if @cli.current_channel["channel_id"].to_i == channeluserisin.to_i
+								@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
+							else
+								@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
+								@cli.join_channel(channeluserisin)							
+							end
+						end
+						if message == 'debug'
+							#@cli.text_user(msg.actor, "#{@cli.users}")
+							#@cli.text_user(msg.actor, "#{@cli.users.values.find { |x| x.session == msg.session }}")
+							#comesfromuser = @cli.users[msg.session]
+							#temp = @cli.users[msg.actor]
+							#puts temp.inspect
+							#puts @cli.users.values.find { |x| x.session == msg.actor }
+							#comesfromuser_session= @cli.users.values.find { |x| x.session == msg.session }
+							#puts comesfromuser_session.inspect
+							#comesfromuser = @cli.users[comesfromuser_session]
+							#puts comesfromuser.inspect
+							#@cli.text_user(msg.actor, "#{comesfromuser_session}, #{comesfromuser}")
+							#channelfrom = comesfromuser.channel_id
+							#@cli.join_channel(channelfrom)
+							@cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
+						end
+						#if message.match(/^seek [0-9]{1,5}$/)
+						#	seekto = message.match(/^seek ([0-9]{1,5})$/)[1]
+						#	puts seekto
+						#	@mpd.seek(seekto)
+						#end
+						if message == 'next'
+							@mpd.next
+						end
+						if message == 'prev'
+							@mpd.previous
+						end
+						if message == 'gotobed'
+							#@cli.join_channel(@mumbleserver_targetchannel)
+							@mpd.pause = true
+							@cli.deafen true
+						end
+						if message == 'wakeup'
+							#@cli.join_channel(@mumbleserver_targetchannel)
+							@mpd.pause = false
+							@cli.deafen false
+							@cli.mute false
+						end
+						if message.match(/^v [0-9]{1,3}$/)
+							volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
+							
+							if (volume >=0 ) && (volume <= 100)
+								@mpd.volume = volume
+							else
+								@cli.text_user(msg.actor, "Volume can be within a range of 0 to 100")
+							end
+								
+						end
+						if message == 'v-'
+							volume = ((@mpd.volume).to_i - 5)
+							if volume < 0
+								#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
+								volume = 0
+							end
+							
+							@mpd.volume = volume
+						end
+						if message == 'v--'
+							volume = ((@mpd.volume).to_i - 10)
+							if volume < 0
+								#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
+								volume = 0
+							end
+							
+							@mpd.volume = volume
+						end
+						if message == 'v+'
+							volume = ((@mpd.volume).to_i + 5)
+							if volume > 100
+								#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
+								volume = 100
+							end
+							
+							@mpd.volume = volume
+						end
+						if message == 'v++'
+							volume = ((@mpd.volume).to_i + 10)
+							if volume > 100
+								#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
+								volume = 100
+							end
+							
+							@mpd.volume = volume
+						end
+						if message == 'clear'
+							@mpd.clear
+							@cli.text_user(msg.actor, "The playqueue was cleared.")
+						end
+						if message == 'kaguBe' || message == '42'
+							@cli.text_user(msg.actor, "<a href='http://wiki.natenom.de/sammelsurium/kagube'>All glory to kaguBe!</a>")
+						end
+						if message == 'random'
+							@mpd.random = !@mpd.random?
+						end
+						if message == 'repeat'
+							@mpd.repeat = !@mpd.repeat?
+						end
+						if message == 'single'
+							@mpd.single = !@mpd.single?
+						end
+						if message == 'consume'
+							@mpd.consume = !@mpd.consume?
+						end
+						if message == 'pp'
+							@mpd.pause = !@mpd.paused?
+						end
+						if message == 'stop'
+							@mpd.stop
+						end
+						if message == 'play'
+							@mpd.play
+							@cli.deafen false
+							@cli.mute false
+						end
+						if message == 'playlists'
+							text_out = ""
+							counter = 0
+							@mpd.playlists.each do |playlist|
+								text_out = text_out + "#{counter} - #{playlist.name}<br/>"
+								counter = counter + 1
+							end
+							
+							@cli.text_user(msg.actor, "I know the following playlists:<br />#{text_out}")
+						end
+						#if message.match(/^playlist [a-z0-9][^\w]$/)
+						if message.match(/^playlist [0-9]{1,3}.*$/)
+							playlist_id = message.match(/^playlist ([0-9]{1,3})$/)[1].to_i
+							
+							begin
+								playlist = @mpd.playlists[playlist_id]
+								@mpd.clear
+								playlist.load
+								@mpd.play
+								@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
+							rescue
+								@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
+							end
+							
+							#if (playlist = @mpd.playlists[playlist_id]) #I am sure there is a better way :)
+							#	playlist = @mpd.playlists[playlist_id]
+							#	@mpd.clear
+							#	playlist.load
+							#	@mpd.play
+							#	@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
+							#else
+							#	@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
+							#end
+						
+							#If name was given, use this ... do later and distinct between number and name ...
+							#playlist_name = message.match(/^playlist (.*)$/)[1]
+							#@mpd.playlists.each do |playlist|
+							#	if playlist.name == playlist_name
+							#		@mpd.clear
+							#		playlist.load
+							#		@mpd.play
+							#	end
+							#end
+						end
+						if message == 'status'
+							status = @mpd.status
+							@cli.text_user(msg.actor, "Sorry, this is still the raw message I get from mpd...:<br />#{status.inspect}")
+						end
+						if message.match(/[fF][uU][cC][kK]/)
+							@cli.text_user(msg.actor, "Fuck is an English-language word, a profanity which refers to the act of sexual intercourse and is also commonly used to denote disdain or as an intensifier. Its origin is obscure; it is usually considered to be first attested to around 1475, but may be considerably older. In modern usage, the term fuck and its derivatives (such as fucker and fucking) can be used in the position of a noun, a verb, an adjective or an adverb.<br />Source: <a href='http://en.wikipedia.org/wiki/Fuck'>Wikipedia</a>")
+						end
+						if message == 'file'
+							current = @mpd.current_song
+							@cli.text_user(msg.actor, "Filename of currently played song:<br />#{current.file}</span>")
+						end
+						if message == 'song'
+							current = @mpd.current_song
+							if not current.nil? #Would crash if playlist was empty.
+								@cli.text_user(msg.actor, "#{current.artist} - #{current.title} (#{current.album})")
+							else
+								@cli.text_user(msg.actor, "No song is played currently.")
+							end
 						end
 					end
 				#else
