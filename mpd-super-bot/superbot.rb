@@ -327,8 +327,8 @@ class MumbleMPD
 				#else
 					#@cli.text_channel(@cli.current_channel, "Sorry, I don't know this command :)")
 				end
-			else
-				@cli.text_channel(@cli.current_channel, "Sorry, I am configured to not execute commands.")
+			#else
+				#@cli.text_channel(@cli.current_channel, "Sorry, I am configured to not execute commands.")
 			end
 		end
 		
