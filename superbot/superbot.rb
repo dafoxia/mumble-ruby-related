@@ -94,16 +94,16 @@ class MumbleMPD
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
 		
-		controlchar = "#"
+		controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
-				if msg.message.match(/^[#{controlchar}].*$/) #Check if message starts with controlchar
-					message = msg.message[1..-1] #Remove first (control) charactar (!)
-								
+				if msg.message.start_with?("#{controlstring}")
+					message = msg.message.split(controlstring)[1] #Remove controlstring
+					
 					if message == 'help'
-						cc = controlchar
+						cc = controlstring
 						@cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
 								  + "<br />" \
 						                  + "<u>Controls:</u><br />" \
