@@ -4,6 +4,9 @@ mumble-ruby-related
 # About
 Things related to mumble-ruby ...
 
+# Superbot
+A mumble-ruby bot to which you can send text commands in order to control MPD which sends music to a Mumble server. For details see http://en.wiki.natenom.de/w/Superbot.
+
 # HowTo (English)
 * Howto for setting up mumble-ruby: http://en.wiki.natenom.de/w/Mumble-Ruby_installation
 * Howto for installing several bots with different sources: http://en.wiki.natenom.de/w/Mumble-Ruby_music_bot_with_MPD
