@@ -142,10 +142,15 @@ class MumbleMPD
 					#	@cli.join_channel(@previouschannel)
 					#end
 					if message == 'ch'
-						@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
 						usermessagefrom = @cli.users[msg.actor]
 						channeluserisin = usermessagefrom["channel_id"]
-						@cli.join_channel(channeluserisin)
+
+						if @cli.current_channel["channel_id"].to_i == channeluserisin.to_i
+							@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
+						else
+							@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
+							@cli.join_channel(channeluserisin)							
+						end
 					end
 					if message == 'debug'
 						#@cli.text_user(msg.actor, "#{@cli.users}")
