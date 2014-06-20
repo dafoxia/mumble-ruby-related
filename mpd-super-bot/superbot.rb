@@ -95,10 +95,11 @@ class MumbleMPD
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
 		
 		controlchar = "#"
+		#whitelist = [83,48,110,90]
 		
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
-				if msg.message.match(/^#{controlchar}.*$/) #Check if message starts with !
+				if msg.message.match(/^[#{controlchar}].*$/) #Check if message starts with controlchar
 					message = msg.message[1..-1] #Remove first (control) charactar (!)
 								
 					if message == 'help'
