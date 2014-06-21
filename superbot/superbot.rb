@@ -94,13 +94,13 @@ class MumbleMPD
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
 		
-		controlstring = "#"
+		@controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
-				if msg.message.start_with?("#{controlstring}")
-					message = msg.message.split(controlstring)[1] #Remove controlstring
+				if msg.message.start_with?("#{@controlstring}")
+					message = msg.message.split(@controlstring)[1] #Remove @controlstring
 					
 					#initialize
 					message_is_from_unregistered_user = false
@@ -117,7 +117,7 @@ class MumbleMPD
 					
 					if message_is_from_unregistered_user == false #do not accept commands from unregistered users.
 						if message == 'help'
-							cc = controlstring
+							cc = @controlstring
 							@cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
 									+ "<br />" \
 									+ "<u>Controls:</u><br />" \
@@ -133,6 +133,12 @@ class MumbleMPD
 									+ "#{cc}<b>v-</b> Decrease volume by 5%.<br />" \
 									+ "#{cc}<b>v++</b> Increase volume by 10%.<br />" \
 									+ "#{cc}<b>v--</b> Decrease volume by 10%.<br />" \
+									+ "<br />" \
+									+ "<u>Channel control:</u><br />" \
+									+ "#{cc}<b>stick</b> Sticks the bot to your current channel.<br />" \
+									+ "#{cc}<b>unstick</b> unsticks the bot.<br />" \
+									+ "#{cc}<b>follow</b> Let the bot follow you.<br />" \
+									+ "#{cc}<b>unfollow</b> The bot stops following you.<br />" \
 									+ "<br />" \
 									+ "<u>Settings:</u><br />" \
 									+ "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
@@ -203,6 +209,54 @@ class MumbleMPD
 							@mpd.pause = false
 							@cli.deafen false
 							@cli.mute false
+						end
+						if message == 'follow'
+								@follow = true
+								currentuser = msg.actor
+								@following = Thread.new {
+								while @follow == true do
+									newchannel = @cli.users[currentuser].channel_id
+									@cli.join_channel(newchannel)
+									sleep(1)
+								end
+							}
+						end
+						if message == 'unfollow'
+							if @follow == false
+								@cli.text_user(msg.actor, "#{@controlstring}unfollow haven't been executed yet.")
+							else
+								@follow = false
+								begin
+									Thread.kill(@following)
+								rescue TypeError
+									puts "#{$!}"
+									@cli.text_user(msg.actor, "#{@controlstring}unfollow haven't been executed yet.")
+								end
+							end
+						end
+						if message == 'stick'
+							@sticky = true
+							usermessagefrom = @cli.users[msg.actor]
+							channeluserisin = usermessagefrom["channel_id"]
+							@sticked = Thread.new {
+								while @sticky == true do
+									@cli.join_channel(channeluserisin)
+									sleep(1)
+								end
+							}
+						end
+						if message == 'unstick'
+							if @sticky == false
+								@cli.text_user(msg.actor, "#{@controlstring}unstick haven't been executed yet.")
+							else
+								@sticky = false
+								begin
+									Thread.kill(@sticked)
+								rescue TypeError
+									puts "#{$!}"
+									@cli.text_user(msg.actor, "#{@controlstring}unstick haven't been executed yet.")
+								end
+							end
 						end
 						if message.match(/^v [0-9]{1,3}$/)
 							volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
