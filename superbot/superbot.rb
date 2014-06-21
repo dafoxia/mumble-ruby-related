@@ -211,7 +211,20 @@ class MumbleMPD
 							@cli.mute false
 						end
 						if message == 'follow'
+								if @alreadyfollowing == true
+									@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+									@alreadyfollowing = false
+									begin
+										Thread.kill(@following)
+										@alreadyfollowing = false
+									rescue TypeError
+										puts "#{$!}"
+										@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+									end
+								end
 								@follow = true
+								@alreadyfollowing = true
+								@cli.text_user(msg.actor, "I'm following your steps, master")
 								currentuser = msg.actor
 								@following = Thread.new {
 								while @follow == true do
@@ -223,19 +236,32 @@ class MumbleMPD
 						end
 						if message == 'unfollow'
 							if @follow == false
-								@cli.text_user(msg.actor, "#{@controlstring}unfollow haven't been executed yet.")
+								@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
 							else
 								@follow = false
+								@alreadyfollowing = false
 								begin
 									Thread.kill(@following)
 								rescue TypeError
 									puts "#{$!}"
-									@cli.text_user(msg.actor, "#{@controlstring}unfollow haven't been executed yet.")
+									@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
 								end
 							end
 						end
 						if message == 'stick'
+							if @alreadysticky == true
+								@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+								@alreadysticky = false
+								begin
+									Thread.kill(@sticked)
+									@alreadysticky= false
+								rescue TypeError
+									puts "#{$!}"
+									@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+								end
+							end
 							@sticky = true
+							@alreadysticky = true
 							usermessagefrom = @cli.users[msg.actor]
 							channeluserisin = usermessagefrom["channel_id"]
 							@sticked = Thread.new {
@@ -247,14 +273,15 @@ class MumbleMPD
 						end
 						if message == 'unstick'
 							if @sticky == false
-								@cli.text_user(msg.actor, "#{@controlstring}unstick haven't been executed yet.")
+								@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
 							else
 								@sticky = false
+								@alreadysticky = false
 								begin
 									Thread.kill(@sticked)
 								rescue TypeError
 									puts "#{$!}"
-									@cli.text_user(msg.actor, "#{@controlstring}unstick haven't been executed yet.")
+									@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
 								end
 							end
 						end
