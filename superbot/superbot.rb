@@ -177,12 +177,11 @@ class MumbleMPD
 							@mpd.previous
 						end
 						if message == 'gotobed'
-							#@cli.join_channel(@mumbleserver_targetchannel)
+							@cli.join_channel(@mumbleserver_targetchannel)
 							@mpd.pause = true
 							@cli.deafen true
 						end
 						if message == 'wakeup'
-							#@cli.join_channel(@mumbleserver_targetchannel)
 							@mpd.pause = false
 							@cli.deafen false
 							@cli.mute false
