@@ -20,8 +20,6 @@ class MumbleMPD
 		@controllable = ARGV[9].to_s
 		@certdirectory = ARGV[10].to_s
 
-		@previouschannel = 0
-		
 		@mpd = MPD.new @mpd_host, @mpd_port
 
 		@cli = Mumble::Client.new(@mumbleserver_host, @mumbleserver_port) do |conf|
@@ -102,17 +100,17 @@ class MumbleMPD
 				if msg.message.start_with?("#{@controlstring}")
 					message = msg.message.split(@controlstring)[1] #Remove @controlstring
 					
-					#initialize
-					message_is_from_unregistered_user = false
-					
 					#Some of the next two information we may need later...
 					user_who_sent_message = @cli.users[msg.actor]
 					
 					#This is hacky because mumble uses -1 for user_id of unregistered users,
 					# while mumble-ruby seems to just omit the value for unregistered users.
 					# With this hacky thing commands from SuperUser are also being ignored.
+					
 					if user_who_sent_message["user_id"].to_i == 0
 						message_is_from_unregistered_user = true
+					else
+						message_is_from_unregistered_user = false
 					end
 					
 					if message_is_from_unregistered_user == false #do not accept commands from unregistered users.
@@ -159,9 +157,6 @@ class MumbleMPD
 									+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
 									+ "#{cc}<b>help</b> Shows this help.<br />")
 						end
-						#if message == 'goback'
-						#	@cli.join_channel(@previouschannel)
-						#end
 						if message == 'ch'
 							channeluserisin = user_who_sent_message["channel_id"]
 
@@ -173,26 +168,8 @@ class MumbleMPD
 							end
 						end
 						if message == 'debug'
-							#@cli.text_user(msg.actor, "#{@cli.users}")
-							#@cli.text_user(msg.actor, "#{@cli.users.values.find { |x| x.session == msg.session }}")
-							#comesfromuser = @cli.users[msg.session]
-							#temp = @cli.users[msg.actor]
-							#puts temp.inspect
-							#puts @cli.users.values.find { |x| x.session == msg.actor }
-							#comesfromuser_session= @cli.users.values.find { |x| x.session == msg.session }
-							#puts comesfromuser_session.inspect
-							#comesfromuser = @cli.users[comesfromuser_session]
-							#puts comesfromuser.inspect
-							#@cli.text_user(msg.actor, "#{comesfromuser_session}, #{comesfromuser}")
-							#channelfrom = comesfromuser.channel_id
-							#@cli.join_channel(channelfrom)
 							@cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
 						end
-						#if message.match(/^seek [0-9]{1,5}$/)
-						#	seekto = message.match(/^seek ([0-9]{1,5})$/)[1]
-						#	puts seekto
-						#	@mpd.seek(seekto)
-						#end
 						if message == 'next'
 							@mpd.next
 						end
@@ -212,19 +189,20 @@ class MumbleMPD
 						end
 						if message == 'follow'
 								if @alreadyfollowing == true
-									@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+									@cli.text_user(msg.actor, "I am already following someone! But from now on I will follow you, master.")
 									@alreadyfollowing = false
 									begin
 										Thread.kill(@following)
 										@alreadyfollowing = false
 									rescue TypeError
 										puts "#{$!}"
-										@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+										#@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
 									end
 								end
+								
 								@follow = true
 								@alreadyfollowing = true
-								@cli.text_user(msg.actor, "I'm following your steps, master")
+								@cli.text_user(msg.actor, "I am following your steps, master.")
 								currentuser = msg.actor
 								@following = Thread.new {
 								while @follow == true do
@@ -236,7 +214,7 @@ class MumbleMPD
 						end
 						if message == 'unfollow'
 							if @follow == false
-								@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
+								@cli.text_user(msg.actor, "I am not following anyone.")
 							else
 								@follow = false
 								@alreadyfollowing = false
@@ -244,36 +222,39 @@ class MumbleMPD
 									Thread.kill(@following)
 								rescue TypeError
 									puts "#{$!}"
-									@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
+									#@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
 								end
 							end
 						end
 						if message == 'stick'
 							if @alreadysticky == true
-								@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+								@cli.text_user(msg.actor, "I'm already following someone! Resetting...")
 								@alreadysticky = false
 								begin
 									Thread.kill(@sticked)
 									@alreadysticky= false
 								rescue TypeError
 									puts "#{$!}"
-									@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
+									#@cli.text_user(msg.actor, "I'm already following someone! Resetting...")
 								end
 							end
 							@sticky = true
 							@alreadysticky = true
-							usermessagefrom = @cli.users[msg.actor]
-							channeluserisin = usermessagefrom["channel_id"]
+							#usermessagefrom = @cli.users[msg.actor]
+							channeluserisin = user_who_sent_message["channel_id"]
 							@sticked = Thread.new {
 								while @sticky == true do
-									@cli.join_channel(channeluserisin)
-									sleep(1)
+									if @cli.current_channel == channeluserisin
+										sleep(1)
+									else
+										@cli.join_channel(channeluserisin)
+									end
 								end
 							}
 						end
 						if message == 'unstick'
 							if @sticky == false
-								@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
+								@cli.text_user(msg.actor, "I am not sticked to a channel currently.")
 							else
 								@sticky = false
 								@alreadysticky = false
@@ -281,7 +262,7 @@ class MumbleMPD
 									Thread.kill(@sticked)
 								rescue TypeError
 									puts "#{$!}"
-									@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
+									#@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
 								end
 							end
 						end
@@ -371,7 +352,6 @@ class MumbleMPD
 							
 							@cli.text_user(msg.actor, "I know the following playlists:<br />#{text_out}")
 						end
-						#if message.match(/^playlist [a-z0-9][^\w]$/)
 						if message.match(/^playlist [0-9]{1,3}.*$/)
 							playlist_id = message.match(/^playlist ([0-9]{1,3})$/)[1].to_i
 							
@@ -384,26 +364,6 @@ class MumbleMPD
 							rescue
 								@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
 							end
-							
-							#if (playlist = @mpd.playlists[playlist_id]) #I am sure there is a better way :)
-							#	playlist = @mpd.playlists[playlist_id]
-							#	@mpd.clear
-							#	playlist.load
-							#	@mpd.play
-							#	@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
-							#else
-							#	@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
-							#end
-						
-							#If name was given, use this ... do later and distinct between number and name ...
-							#playlist_name = message.match(/^playlist (.*)$/)[1]
-							#@mpd.playlists.each do |playlist|
-							#	if playlist.name == playlist_name
-							#		@mpd.clear
-							#		playlist.load
-							#		@mpd.play
-							#	end
-							#end
 						end
 						if message == 'status'
 							status = @mpd.status
@@ -425,11 +385,7 @@ class MumbleMPD
 							end
 						end
 					end
-				#else
-					#@cli.text_channel(@cli.current_channel, "Sorry, I don't know this command :)")
 				end
-			#else
-				#@cli.text_channel(@cli.current_channel, "Sorry, I am configured to not execute commands.")
 			end
 		end
 		
