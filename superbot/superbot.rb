@@ -28,10 +28,6 @@ class MumbleMPD
 			conf.bitrate = @quality_bitrate
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
-	
-		#Check whether set_comment is available in mumble-ruby.
-		@can_set_comment = @cli.respond_to?(:set_comment=)
-		
 		@mpd.on :volume do |volume|
 			@cli.text_channel(@cli.current_channel, "Volume was set to: #{volume}.")
 		end
@@ -78,19 +74,16 @@ class MumbleMPD
 			end
 			@cli.text_channel(@cli.current_channel, "Repeat mode is now: #{repeat}.")
 		end
-		
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
 				if @output_comment == true && @can_set_comment == true
 					begin
-						@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.artist}<br />"\
-										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.title}<br /><br />" \
-										+ "<b>Type #{@controlstring}help to view my commands!")
+						@cli.set_comment(@comment_enabled)
 					rescue NoMethodError
 						puts "#{$!}"
 					end
 				else
-					@cli.text_channel(@cli.current_channel, "<br>#{current.artist} - #{current.title} (#{current.album})")
+					@cli.text_channel(@cli.current_channel, "<br>#{@artist} - #{@title} (#{@album})")
 				end
 			end
 		end
@@ -104,18 +97,35 @@ class MumbleMPD
 		@cli.stream_raw_audio(@mpd_fifopath)
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
-		
+		current = @mpd.current_song
+		@artist = current.artist
+		@title = current.title
+		@album = current.album
 		@controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
+		#Check whether set_comment is available in mumble-ruby.
+		begin
+			@cli.set_comment("")
+			@can_set_comment = true
+		rescue NoMethodError
+			puts "#{$!}"
+			@can_set_comment = false
+		end
+		
+		
 		@output_comment = false
 		
+		@comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
+							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
+							+ "<b>Type #{@controlstring}help to view my commands!"
+		@comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
+							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+							+ "<b>Type #{@controlstring}help to view my commands!"
 		
 		if @can_set_comment == true
 			begin
-				@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
-										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
-										+ "<b>Type #{@controlstring}help to view my commands!" )
+				@cli.set_comment(@comment_disabled)
 										
 			rescue NoMethodError
 				puts "#{$!}"
@@ -275,6 +285,10 @@ class MumbleMPD
 								end
 							}
 						end
+						if message == 'test1'
+							@cli.text_user(msg.actor, "#{@can_set_comment}")
+							@cli.text_user(msg.actor, "#{@output_comment}")
+						end
 						if message == 'unstick'
 							if @sticky == false
 								@cli.text_user(msg.actor, "I am not sticked to a channel currently.")
@@ -293,9 +307,11 @@ class MumbleMPD
 								if @output_comment == true
 									@output_comment = false
 									@cli.text_user(msg.actor, "Output is now CHAT")
+									@cli.set_comment(@comment_disabled)
 								else
 									@output_comment = true
 									@cli.text_user(msg.actor, "Output is now COMMENT")
+									@cli.set_comment(@comment_enabled)
 								end
 							rescue NoMethodError
 								puts "#{$!}"
