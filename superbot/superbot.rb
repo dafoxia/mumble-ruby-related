@@ -29,6 +29,9 @@ class MumbleMPD
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
 	
+		#Check whether set_comment is available in mumble-ruby.
+		can_set_comment = @cli.respond_to?(:set_comment=)
+		
 		@mpd.on :volume do |volume|
 			@cli.text_channel(@cli.current_channel, "Volume was set to: #{volume}.")
 		end
@@ -78,7 +81,7 @@ class MumbleMPD
 		
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
-				if @output_comment == true
+				if @output_comment == true && can_set_comment == true
 					begin
 						@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.artist}<br />"\
 										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.title}<br /><br />" \
@@ -106,13 +109,17 @@ class MumbleMPD
 		#whitelist = [83,48,110,90]
 		
 		@output_comment = false
-		begin
-			@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
-									+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
-									+ "<b>Type #{@controlstring}help to view my commands!" )
-									
-		rescue NoMethodError
-			puts "#{$!}"
+		
+		
+		if can_set_comment == true
+			begin
+				@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
+										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+										+ "<b>Type #{@controlstring}help to view my commands!" )
+										
+			rescue NoMethodError
+				puts "#{$!}"
+			end
 		end
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
