@@ -30,7 +30,7 @@ class MumbleMPD
 		end
 	
 		#Check whether set_comment is available in mumble-ruby.
-		can_set_comment = @cli.respond_to?(:set_comment=)
+		@can_set_comment = @cli.respond_to?(:set_comment=)
 		
 		@mpd.on :volume do |volume|
 			@cli.text_channel(@cli.current_channel, "Volume was set to: #{volume}.")
@@ -81,7 +81,7 @@ class MumbleMPD
 		
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
-				if @output_comment == true && can_set_comment == true
+				if @output_comment == true && @can_set_comment == true
 					begin
 						@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.artist}<br />"\
 										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.title}<br /><br />" \
@@ -111,7 +111,7 @@ class MumbleMPD
 		@output_comment = false
 		
 		
-		if can_set_comment == true
+		if @can_set_comment == true
 			begin
 				@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
 										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
@@ -165,7 +165,7 @@ class MumbleMPD
 									+ "#{cc}<b>unfollow</b> The bot stops following you.<br />" \
 									+ "<br />" \
 									+ "<u>Settings:</u><br />" \
-									+ "#{cc}<b>output</b> Toggle the output mode ( Comment or Chat )" \
+									+ "#{cc}<b>output <i>comment</i>|<i>chat</i></b> Toggle the output mode.<br />" \
 									+ "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
 									+ "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
 									+ "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
