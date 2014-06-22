@@ -78,7 +78,17 @@ class MumbleMPD
 		
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
-				@cli.text_channel(@cli.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+				if @output_comment == true
+					begin
+						@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.artist}<br />"\
+										+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{current.title}<br /><br />" \
+										+ "<b>Type #{@controlstring}help to view my commands!")
+					rescue NoMethodError
+						puts "#{$!}"
+					end
+				else
+					@cli.text_channel(@cli.current_channel, "<br>#{current.artist} - #{current.title} (#{current.album})")
+				end
 			end
 		end
 	end
@@ -95,6 +105,15 @@ class MumbleMPD
 		@controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
+		@output_comment = false
+		begin
+			@cli.set_comment("<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
+									+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+									+ "<b>Type #{@controlstring}help to view my commands!" )
+									
+		rescue NoMethodError
+			puts "#{$!}"
+		end
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
 				if msg.message.start_with?("#{@controlstring}")
@@ -139,6 +158,7 @@ class MumbleMPD
 									+ "#{cc}<b>unfollow</b> The bot stops following you.<br />" \
 									+ "<br />" \
 									+ "<u>Settings:</u><br />" \
+									+ "#{cc}<b>output</b> Toggle the output mode ( Comment or Chat )" \
 									+ "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
 									+ "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
 									+ "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
@@ -164,7 +184,7 @@ class MumbleMPD
 								@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
 							else
 								@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
-								@cli.join_channel(channeluserisin)							
+								@cli.join_channel(channeluserisin)
 							end
 						end
 						if message == 'debug'
@@ -195,7 +215,6 @@ class MumbleMPD
 										@alreadyfollowing = false
 									rescue TypeError
 										puts "#{$!}"
-										#@cli.text_user(msg.actor, "#{@controlstring}I'm already following someone! Resetting...")
 									end
 								end
 								
@@ -221,7 +240,7 @@ class MumbleMPD
 									Thread.kill(@following)
 								rescue TypeError
 									puts "#{$!}"
-									#@cli.text_user(msg.actor, "#{@controlstring}unfollow hasn't been executed yet.")
+									@cli.text_user(msg.actor, "#{@controlstring}follow hasn't been executed yet.")
 								end
 							end
 						end
@@ -234,13 +253,11 @@ class MumbleMPD
 									@alreadysticky= false
 								rescue TypeError
 									puts "#{$!}"
-									#@cli.text_user(msg.actor, "I'm already following someone! Resetting...")
 								end
 							end
 							@sticky = true
 							@alreadysticky = true
-							#usermessagefrom = @cli.users[msg.actor]
-							channeluserisin = user_who_sent_message["channel_id"]
+							channeluserisin = @cli.users[msg.actor].channel_id
 							@sticked = Thread.new {
 								while @sticky == true do
 									if @cli.current_channel == channeluserisin
@@ -261,8 +278,20 @@ class MumbleMPD
 									Thread.kill(@sticked)
 								rescue TypeError
 									puts "#{$!}"
-									#@cli.text_user(msg.actor, "#{@controlstring}unstick hasn't been executed yet.")
 								end
+							end
+						end
+						if message == 'output'
+							begin
+								if @output_comment == true
+									@output_comment = false
+									@cli.text_user(msg.actor, "Output is now CHAT")
+								else
+									@output_comment = true
+									@cli.text_user(msg.actor, "Output is now COMMENT")
+								end
+							rescue NoMethodError
+								puts "#{$!}"
 							end
 						end
 						if message.match(/^v [0-9]{1,3}$/)
