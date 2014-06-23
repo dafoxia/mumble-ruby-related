@@ -173,7 +173,7 @@ class MumbleMPD
 									+ "#{cc}<b>unfollow</b> The bot stops following you.<br />" \
 									+ "<br />" \
 									+ "<u>Settings:</u><br />" \
-									+ "#{cc}<b>output <i>comment</i>|<i>chat</i></b> Toggle the output mode.<br />" \
+									+ "#{cc}<b>displayinfo</b> Toggle where to show the current playling song; either in the comment or as a text message to the channel.<br />" \
 									+ "#{cc}<b>consume</b> Toggle mpd´s consume mode which removes played titles from the playlist if on.<br />" \
 									+ "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
 									+ "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
@@ -300,15 +300,15 @@ class MumbleMPD
 								end
 							end
 						end
-						if message == 'output'
+						if message == 'displayinfo'
 							begin
 								if @output_comment == true
 									@output_comment = false
-									@cli.text_user(msg.actor, "Output is now CHAT")
+									@cli.text_user(msg.actor, "Output is now \"Channel\"")
 									@cli.set_comment(@template_if_comment_disabled)
 								else
 									@output_comment = true
-									@cli.text_user(msg.actor, "Output is now COMMENT")
+									@cli.text_user(msg.actor, "Output is now \"Comment\"")
 									@cli.set_comment(@template_if_comment_enabled)
 								end
 							rescue NoMethodError
