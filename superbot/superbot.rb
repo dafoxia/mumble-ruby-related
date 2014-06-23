@@ -36,9 +36,11 @@ class MumbleMPD
 		
 		@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>%s<br />"\
 							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>%s<br /><br />" \
+							+ "<b>Album:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>%s<br /><br />" \
 							+ "<b>Type %shelp to view my commands!"
 		@template_if_comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
 							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+							+ "<b>Album:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
 							+ "<b>Type %shelp to view my commands!"
 		
 		@set_comment_available = false
