@@ -14,6 +14,9 @@ class MumbleMPD
 		@mumbleserver_targetchannel = ARGV[4].to_s
 		@quality_bitrate = ARGV[5].to_i
 		
+		@controlstring = "#"
+		#whitelist = [83,48,110,90]		
+		
 		@mpd_fifopath = ARGV[6].to_s
 		@mpd_host = ARGV[7].to_s
 		@mpd_port = ARGV[8].to_i
@@ -96,7 +99,7 @@ class MumbleMPD
 			if not current.nil? #Would crash if playlist was empty.
 				if @output_comment == true && @set_comment_available == true
 					begin
-						@cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album])
+						@cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album, @controlstring])
 					rescue NoMethodError
 						puts "#{$!}"
 					end
@@ -120,9 +123,6 @@ class MumbleMPD
 		#@artist = current.artist
 		#@title = current.title
 		#@album = current.album
-		
-		@controlstring = "#"
-		#whitelist = [83,48,110,90]
 		
 		#Check whether set_comment is available in underlying mumble-ruby.
 		begin
@@ -314,7 +314,7 @@ class MumbleMPD
 								if @output_comment == true
 									@output_comment = false
 									@cli.text_user(msg.actor, "Output is now \"Channel\"")
-									@cli.set_comment(@template_if_comment_disabled)
+									@cli.set_comment(@template_if_comment_disabled % [@controlstring])
 								else
 									@output_comment = true
 									@cli.text_user(msg.actor, "Output is now \"Comment\"")
