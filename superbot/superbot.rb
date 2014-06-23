@@ -24,12 +24,19 @@ class MumbleMPD
 
 		@mpd = MPD.new @mpd_host, @mpd_port
 
-		@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
-							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
-							+ "<b>Type #{@controlstring}help to view my commands!"
+		#@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
+		#					+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
+		#					+ "<b>Type #{@controlstring}help to view my commands!"
+		#@template_if_comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
+		#					+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+		#					+ "<b>Type #{@controlstring}help to view my commands!"
+		
+		@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>%s<br />"\
+							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>%s<br /><br />" \
+							+ "<b>Type %shelp to view my commands!"
 		@template_if_comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
 							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
-							+ "<b>Type #{@controlstring}help to view my commands!"
+							+ "<b>Type %shelp to view my commands!"
 		
 		@set_comment_available = false
 		
@@ -89,12 +96,12 @@ class MumbleMPD
 			if not current.nil? #Would crash if playlist was empty.
 				if @output_comment == true && @set_comment_available == true
 					begin
-						@cli.set_comment(@template_if_comment_enabled)
+						@cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album])
 					rescue NoMethodError
 						puts "#{$!}"
 					end
 				else
-					@cli.text_channel(@cli.current_channel, "<br>#{@artist} - #{@title} (#{@album})")
+					@cli.text_channel(@cli.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
 				end
 			end
 		end
@@ -108,10 +115,12 @@ class MumbleMPD
 		@cli.stream_raw_audio(@mpd_fifopath)
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
-		current = @mpd.current_song
-		@artist = current.artist
-		@title = current.title
-		@album = current.album
+		
+		#current = @mpd.current_song
+		#@artist = current.artist
+		#@title = current.title
+		#@album = current.album
+		
 		@controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
