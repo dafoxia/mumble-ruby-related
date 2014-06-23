@@ -140,7 +140,7 @@ class MumbleMPD
 
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
-				if msg.message.start_with?("#{@controlstring}")
+				if msg.message.start_with?("#{@controlstring}") && msg.message.length > @controlstring.length #Check whether we have a command after the controlstring.
 					message = msg.message.split(@controlstring)[1] #Remove @controlstring
 					
 					#Some of the next two information we may need later...
