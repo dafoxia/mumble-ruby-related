@@ -19,9 +19,20 @@ class MumbleMPD
 		@mpd_port = ARGV[8].to_i
 		@controllable = ARGV[9].to_s
 		@certdirectory = ARGV[10].to_s
+		
+		@output_comment = false #whether to use comment to display song info; false = send to channel, true = comment
 
 		@mpd = MPD.new @mpd_host, @mpd_port
 
+		@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
+							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
+							+ "<b>Type #{@controlstring}help to view my commands!"
+		@template_if_comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
+							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
+							+ "<b>Type #{@controlstring}help to view my commands!"
+		
+		@set_comment_available = false
+		
 		@cli = Mumble::Client.new(@mumbleserver_host, @mumbleserver_port) do |conf|
 			conf.username = @mumbleserver_username
 			conf.password = @mumbleserver_userpassword
@@ -76,9 +87,9 @@ class MumbleMPD
 		end
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
-				if @output_comment == true && @can_set_comment == true
+				if @output_comment == true && @set_comment_available == true
 					begin
-						@cli.set_comment(@comment_enabled)
+						@cli.set_comment(@template_if_comment_enabled)
 					rescue NoMethodError
 						puts "#{$!}"
 					end
@@ -104,33 +115,20 @@ class MumbleMPD
 		@controlstring = "#"
 		#whitelist = [83,48,110,90]
 		
-		#Check whether set_comment is available in mumble-ruby.
+		#Check whether set_comment is available in underlying mumble-ruby.
 		begin
 			@cli.set_comment("")
-			@can_set_comment = true
+			@set_comment_available = true
 		rescue NoMethodError
 			puts "#{$!}"
-			@can_set_comment = false
+			@set_comment_available = false
 		end
 		
-		
-		@output_comment = false
-		
-		@comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
-							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
-							+ "<b>Type #{@controlstring}help to view my commands!"
-		@comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
-							+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
-							+ "<b>Type #{@controlstring}help to view my commands!"
-		
-		if @can_set_comment == true
-			begin
-				@cli.set_comment(@comment_disabled)
-										
-			rescue NoMethodError
-				puts "#{$!}"
-			end
-		end
+		#Should not neccessary because "@mpd.on :song do |current|" sets the comment already if playing a song.
+		#if @set_comment_available == true
+		#	#@cli.set_comment(@template_if_comment_disabled)
+		#end
+
 		@cli.on_text_message do |msg|
 			if @controllable == "true"
 				if msg.message.start_with?("#{@controlstring}")
@@ -286,7 +284,7 @@ class MumbleMPD
 							}
 						end
 						if message == 'test1'
-							@cli.text_user(msg.actor, "#{@can_set_comment}")
+							@cli.text_user(msg.actor, "#{@set_comment_available}")
 							@cli.text_user(msg.actor, "#{@output_comment}")
 						end
 						if message == 'unstick'
@@ -307,11 +305,11 @@ class MumbleMPD
 								if @output_comment == true
 									@output_comment = false
 									@cli.text_user(msg.actor, "Output is now CHAT")
-									@cli.set_comment(@comment_disabled)
+									@cli.set_comment(@template_if_comment_disabled)
 								else
 									@output_comment = true
 									@cli.text_user(msg.actor, "Output is now COMMENT")
-									@cli.set_comment(@comment_enabled)
+									@cli.set_comment(@template_if_comment_enabled)
 								end
 							rescue NoMethodError
 								puts "#{$!}"
