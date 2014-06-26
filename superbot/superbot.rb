@@ -239,7 +239,8 @@ class MumbleMPD
 								+ "#{cc}<b>ch</b> Let the bot switch into your channel.<br />" \
 								+ "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
 								+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
-								+ "#{cc}<b>help</b> Shows this help.<br />")
+						                + "#{cc}<b>help</b> Shows this help.<br />" \
+								+ "<hr /><span style='color:grey;font-size:10px;'><a href='http://wiki.natenom.com/w/Superbot'>See here for my documentation.</a></span>")
 					end
 					if message.match(/^seek [+]?[0-9]{1,3}$/)
 						seekto = message.match(/^seek ([+]?[0-9]{1,3})$/)[1]
