@@ -168,7 +168,7 @@ class MumbleMPD
 									+ "#{cc}<b>pp</b> Toogle play/pause.<br />" \
 									+ "#{cc}<b>next</b> Play next song in the playlist.<br />" \
 									+ "#{cc}<b>stop</b> Stop the playlist.<br />" \
-									+ "#{cc}<b>seek</b> Seek to a position.<br />" \
+									+ "#{cc}<b>seek <i>value</i>|<i>+value</i></b> Seek to an absolute position (in secods). Use +value to seek relative to the current position.<br />" \
 									+ "<br />" \
 									+ "<u>Volume:</u><br />" \
 									+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
@@ -202,6 +202,10 @@ class MumbleMPD
 									+ "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
 									+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
 									+ "#{cc}<b>help</b> Shows this help.<br />")
+						end
+						if message.match(/^seek [+]?[0-9]{1,3}$/)
+							seekto = message.match(/^seek ([+]?[0-9]{1,3})$/)[1]
+							@mpd.seek seekto
 						end
 						if message == 'ch'
 							channeluserisin = user_who_sent_message["channel_id"]
