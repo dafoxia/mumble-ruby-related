@@ -27,13 +27,6 @@ class MumbleMPD
 
 		@mpd = MPD.new @mpd_host, @mpd_port
 
-		#@template_if_comment_enabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@artist}<br />"\
-		#					+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>#{@title}<br /><br />" \
-		#					+ "<b>Type #{@controlstring}help to view my commands!"
-		#@template_if_comment_disabled = "<b>Artist:&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br />"\
-		#					+ "<b>Title:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</b>DISABLED<br /><br />" \
-		#					+ "<b>Type #{@controlstring}help to view my commands!"
-		
 		@template_if_comment_enabled = "<b>Artist: </b>%s<br />"\
 							+ "<b>Title: </b>%s<br />" \
 							+ "<b>Album: </b>%s<br /><br />" \
@@ -141,9 +134,6 @@ class MumbleMPD
 		#end
 
 		@cli.on_text_message do |msg|
-			puts msg.inspect
-			puts "--"
-			
 			#Check whether message is a private one or was sent to the channel.
 			# Private message looks like this:   <Hashie::Mash actor=54 message="#help" session=[119]>
 			# Channel message:                   <Hashie::Mash actor=54 channel_id=[530] message="#help">
