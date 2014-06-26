@@ -79,7 +79,12 @@ class MumbleMPD
 		end
 		
 		@mpd.on :xfade do |xfade|
-			@cli.text_channel(@cli.current_channel, "Crossfade time (in seconds) is now: #{xfade}.")
+			if xfade.to_i == 0
+				xfade = "Off"
+				@cli.text_channel(@cli.current_channel, "Crossfade is now: #{xfade}.")
+			else
+				@cli.text_channel(@cli.current_channel, "Crossfade time (in seconds) is now: #{xfade}.")
+			end
 		end
 		
 		@mpd.on :repeat do |repeat|
@@ -188,6 +193,7 @@ class MumbleMPD
 									+ "#{cc}<b>repeat</b> Toogle mpd´s repeat mode.<br />" \
 									+ "#{cc}<b>random</b> Toogle mpd´s random mode.<br />" \
 									+ "#{cc}<b>single</b> Toogle mpd´s single mode.<br />" \
+							                + "#{cc}<b>crossfade <i>seconds</i></b> Set crossfade in seconds, set 0 to disable it.<br />" \
 									+ "<br />" \
 									+ "<u>Playlists:</u><br />" \
 									+ "#{cc}<b>playlists</b> Show a list of all playlists.<br />" \
@@ -206,6 +212,10 @@ class MumbleMPD
 							seekto = message.match(/^seek ([+]?[0-9]{1,3})$/)[1]
 							@mpd.seek seekto
 						end
+						if message.match(/^crossfade [0-9]{1,3}$/)
+							secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
+							@mpd.crossfade = secs
+						end							
 						if message == 'ch'
 							channeluserisin = user_who_sent_message["channel_id"]
 
