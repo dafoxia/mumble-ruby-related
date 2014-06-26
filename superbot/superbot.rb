@@ -141,6 +141,15 @@ class MumbleMPD
 		#end
 
 		@cli.on_text_message do |msg|
+			puts msg.inspect
+			puts "--"
+			
+			#Check whether message is a private one or was sent to the channel.
+			# Private message looks like this:   <Hashie::Mash actor=54 message="#help" session=[119]>
+			# Channel message:                   <Hashie::Mash actor=54 channel_id=[530] message="#help">
+			# Channel messages don't have a session, so skip them
+			next if not msg.session
+			
 			if @controllable == "true"
 				if msg.message.start_with?("#{@controlstring}") && msg.message.length > @controlstring.length #Check whether we have a command after the controlstring.
 					message = msg.message.split(@controlstring)[1] #Remove @controlstring
