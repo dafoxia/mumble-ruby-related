@@ -152,9 +152,41 @@ class MumbleMPD
 		#	#@cli.set_comment(@template_if_comment_disabled)
 		#end
 
+		
+		@cli.on_user_state do |msg|
+			#msg.actor = session_id of user who did something on someone, if self done, both is the same.
+			#msg.session = session_id of the target
+
+			msg_target = @cli.users[msg.session]
+			
+			if msg_target["user_id"].nil?
+				msg_userid = -1
+				sender_is_registered = false
+			else
+				msg_userid = msg_target["user_id"]
+				sender_is_registered = true
+			end
+ 			
+			if @debug
+				print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
+				puts "0: #{msg_target.inspect}"
+				puts "1: #{msg_target["user_id"]}"
+				puts "2: #{@cli.current_channel["channel_id"]}"
+				puts "3: #{msg_target["channel_id"]}"
+			end
+							
+			if @cli.current_channel["channel_id"] == msg_target["channel_id"]
+				puts "3: #{sender_is_registered}"
+				if sender_is_registered == false
+					@mpd.stop
+					@cli.text_channel(@cli.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
+				end
+			end
+		end
+		
 		@cli.on_text_message do |msg|
 			if @debug
-				print "\n\nDEBUG: Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
+				print "\n\nDEBUG(on_text_message): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
 			end
 			
 			#Some of the next two information we may need later...
@@ -163,15 +195,11 @@ class MumbleMPD
 			#This is hacky because mumble uses -1 for user_id of unregistered users,
 			# while mumble-ruby seems to just omit the value for unregistered users.
 			# With this hacky thing commands from SuperUser are also being ignored.
-			begin
-				msg_userid = msg_sender["user_id"].to_i
-			rescue NoMethodError
+			if msg_sender["user_id"].nil?
 				msg_userid = -1
-			end
-			
-			if msg_userid == -1
 				sender_is_registered = false
 			else
+				msg_userid = msg_sender["user_id"]
 				sender_is_registered = true
 			end
 			
@@ -234,6 +262,7 @@ class MumbleMPD
 								+ "<u>Playlists:</u><br />" \
 								+ "#{cc}<b>playlists</b> Show a list of all playlists.<br />" \
 								+ "#{cc}<b>playlist <i>number</i></b> Load the playlist and start it. Use #{cc}playlists to get a list of all playlists.<br />" \
+						                + "#{cc}<b>playlist</b>Show all items of the currently loaded playlist + the name of it.<br />" \
 								+ "#{cc}<b>clear</b> Clears the current queue.<br />" \
 								+ "<br />" \
 								+ "<u>Specials:</u><br />" \
@@ -467,6 +496,11 @@ class MumbleMPD
 						@mpd.play
 						@cli.deafen false
 						@cli.mute false
+					end
+					if message == 'playlist'
+						songlist = @mpd.songs
+						puts songlist.inspect
+						
 					end
 					if message == 'playlists'
 						text_out = ""
