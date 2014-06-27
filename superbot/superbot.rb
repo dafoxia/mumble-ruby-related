@@ -194,13 +194,21 @@ class MumbleMPD
 			#This is hacky because mumble uses -1 for user_id of unregistered users,
 			# while mumble-ruby seems to just omit the value for unregistered users.
 			# With this hacky thing commands from SuperUser are also being ignored.
-			if msg_sender["user_id"].nil?
+			begin
+				msg_userid = msg_sender["user_id"].to_i
+				sender_is_registered = true
+			rescue NoMethodError
 				msg_userid = -1
 				sender_is_registered = false
-			else
-				msg_userid = msg_sender["user_id"]
-				sender_is_registered = true
 			end
+			
+			#if msg_sender["user_id"].nil?
+			#	msg_userid = -1
+			#	sender_is_registered = false
+			#else
+			#	msg_userid = msg_sender["user_id"]
+			#	sender_is_registered = true
+			#end
 			
 			if @listen_to_registered_users_only == true
 				if sender_is_registered == false
