@@ -14,6 +14,7 @@ class MumbleMPD
 		@debug = true
 		@listen_to_private_message_only = true
 		@listen_to_registered_users_only = true
+		@stop_on_unregistered_users = true
 		@use_comment_for_status_display = false #Whether to use comment to display song info; false = send to channel, true = comment
 		@template_if_comment_enabled = "<b>Artist: </b>%s<br />"\
 							+ "<b>Title: </b>%s<br />" \
@@ -151,7 +152,6 @@ class MumbleMPD
 		#if @set_comment_available == true
 		#	#@cli.set_comment(@template_if_comment_disabled)
 		#end
-
 		
 		@cli.on_user_state do |msg|
 			#msg.actor = session_id of user who did something on someone, if self done, both is the same.
@@ -176,8 +176,7 @@ class MumbleMPD
 			end
 							
 			if @cli.current_channel["channel_id"] == msg_target["channel_id"]
-				puts "3: #{sender_is_registered}"
-				if sender_is_registered == false
+				if (@stop_on_unregistered_users == true && sender_is_registered == false)
 					@mpd.stop
 					@cli.text_channel(@cli.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
 				end
