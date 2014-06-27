@@ -14,6 +14,7 @@ class MumbleMPD
 		@debug = true
 		@listen_to_private_message_only = true
 		@listen_to_registered_users_only = true
+		@use_vbr = 1 #default for mumble-ruby is 0 in order to use cbr, set 1 to use vbr
 		@stop_on_unregistered_users = true
 		@use_comment_for_status_display = false #Whether to use comment to display song info; false = send to channel, true = comment
 		@template_if_comment_enabled = "<b>Artist: </b>%s<br />"\
@@ -50,6 +51,7 @@ class MumbleMPD
 			conf.username = @mumbleserver_username
 			conf.password = @mumbleserver_userpassword
 			conf.bitrate = @quality_bitrate
+			conf.vbr_rate = @use_vbr
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
 		@mpd.on :volume do |volume|
