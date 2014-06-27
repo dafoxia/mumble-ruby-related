@@ -163,10 +163,10 @@ class MumbleMPD
 			begin
 				msg_userid = msg_sender["user_id"].to_i
 			rescue NoMethodError
-				msg_userid = 0
+				msg_userid = -1
 			end
 			
-			if msg_userid == 0
+			if msg_userid == -1
 				sender_is_registered = false
 			else
 				sender_is_registered = true
