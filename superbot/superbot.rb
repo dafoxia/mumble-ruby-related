@@ -7,16 +7,13 @@ require 'thread'
  
 class MumbleMPD
 	def initialize
-		#################################################
-		###### Change here to adapt for your server #####
-		#################################################
 		@controlstring = "."
 		@debug = true
 		@listen_to_private_message_only = true
 		@listen_to_registered_users_only = true
-		@use_vbr = 1 #default for mumble-ruby is 0 in order to use cbr, set 1 to use vbr
+		@use_vbr = 1 
 		@stop_on_unregistered_users = true
-		@use_comment_for_status_display = false #Whether to use comment to display song info; false = send to channel, true = comment
+		@use_comment_for_status_display = false
 		@template_if_comment_enabled = "<b>Artist: </b>%s<br />"\
 							+ "<b>Title: </b>%s<br />" \
 							+ "<b>Album: </b>%s<br /><br />" \
@@ -26,9 +23,6 @@ class MumbleMPD
 							+ "<b>Album: </b>DISABLED<br /><br />" \
 							+ "<b>Write %shelp to me, to get a list of my commands!"
 		#whitelist = [83,48,110,90] #not yet implemented
-		#################################################
-		###### End: Settings ######
-		#################################################
 		@mumbleserver_host = ARGV[0].to_s
 		@mumbleserver_port = ARGV[1].to_i
 		@mumbleserver_username = ARGV[2].to_s
