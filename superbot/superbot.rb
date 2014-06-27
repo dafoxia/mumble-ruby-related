@@ -10,7 +10,7 @@ class MumbleMPD
 		#################################################
 		###### Change here to adapt for your server #####
 		#################################################
-		@controlstring = "#"
+		@controlstring = "."
 		@debug = true
 		@listen_to_private_message_only = true
 		@listen_to_registered_users_only = true
