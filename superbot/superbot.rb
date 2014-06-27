@@ -9,7 +9,7 @@ class MumbleMPD
 	def initialize
 		#Initialize default values
 		@controlstring = "."
-		@debug = true
+		@debug = false
 		@listen_to_private_message_only = true
 		@listen_to_registered_users_only = true
 		@use_vbr = 1 
