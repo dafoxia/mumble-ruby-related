@@ -28,7 +28,6 @@ class MumbleMPD
 		#################################################
 		###### End: Settings ######
 		#################################################
-
 		@mumbleserver_host = ARGV[0].to_s
 		@mumbleserver_port = ARGV[1].to_i
 		@mumbleserver_username = ARGV[2].to_s
@@ -182,7 +181,13 @@ class MumbleMPD
 				end
 			end
 		end
-		
+		begin
+				require_relative 'superbot_conf.rb'#
+				ext_config()
+			rescue
+				puts "Config could not be loaded! Using default"
+				puts "#{$!}"
+			end
 		@cli.on_text_message do |msg|
 			if @debug
 				print "\n\nDEBUG(on_text_message): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
@@ -221,7 +226,6 @@ class MumbleMPD
 					next
 				end
 			end
-
 			if @controllable == "true"
 				if msg.message.start_with?("#{@controlstring}") && msg.message.length > @controlstring.length #Check whether we have a command after the controlstring.
 					message = msg.message.split(@controlstring)[1] #Remove @controlstring
