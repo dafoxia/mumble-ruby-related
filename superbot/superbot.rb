@@ -205,7 +205,7 @@ class MumbleMPD
 								+ "#{cc}<b>pp</b> Toogle play/pause.<br />" \
 								+ "#{cc}<b>next</b> Play next song in the playlist.<br />" \
 								+ "#{cc}<b>stop</b> Stop the playlist.<br />" \
-								+ "#{cc}<b>seek <i>value</i>|<i>+value</i></b> Seek to an absolute position (in secods). Use +value to seek relative to the current position.<br />" \
+								+ "#{cc}<b>seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />" \
 								+ "<br />" \
 								+ "<u>Volume:</u><br />" \
 								+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
@@ -242,14 +242,14 @@ class MumbleMPD
 						                + "#{cc}<b>help</b> Shows this help.<br />" \
 								+ "<hr /><span style='color:grey;font-size:10px;'><a href='http://wiki.natenom.com/w/Superbot'>See here for my documentation.</a></span>")
 					end
-					if message.match(/^seek [+]?[0-9]{1,3}$/)
-						seekto = message.match(/^seek ([+]?[0-9]{1,3})$/)[1]
+					if message.match(/^seek [+-]?[0-9]{1,3}$/)
+						seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
 						@mpd.seek seekto
 					end
 					if message.match(/^crossfade [0-9]{1,3}$/)
 						secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
 						@mpd.crossfade = secs
-					end							
+					end
 					if message == 'ch'
 						channeluserisin = msg_sender["channel_id"]
 
