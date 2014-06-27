@@ -7,6 +7,7 @@ require 'thread'
  
 class MumbleMPD
 	def initialize
+		#Initialize default values
 		@controlstring = "."
 		@debug = true
 		@listen_to_private_message_only = true
@@ -23,6 +24,17 @@ class MumbleMPD
 							+ "<b>Album: </b>DISABLED<br /><br />" \
 							+ "<b>Write %shelp to me, to get a list of my commands!"
 		#whitelist = [83,48,110,90] #not yet implemented
+		
+		
+		#Read config file if available
+		begin
+			require_relative 'superbot_conf.rb'#
+			ext_config()
+		rescue
+			puts "Config could not be loaded! Using default"
+			puts "#{$!}"
+		end
+		
 		@mumbleserver_host = ARGV[0].to_s
 		@mumbleserver_port = ARGV[1].to_i
 		@mumbleserver_username = ARGV[2].to_s
@@ -177,13 +189,7 @@ class MumbleMPD
 				end
 			end
 		end
-		begin
-				require_relative 'superbot_conf.rb'#
-				ext_config()
-			rescue
-				puts "Config could not be loaded! Using default"
-				puts "#{$!}"
-			end
+		
 		@cli.on_text_message do |msg|
 			if @debug
 				print "\n\nDEBUG(on_text_message): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
