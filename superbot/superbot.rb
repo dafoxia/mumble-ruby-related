@@ -113,7 +113,11 @@ class MumbleMPD
 						end
 					end
 				else
-					@cli.text_channel(@cli.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+					if current.artist.nil? && current.title.nil? && current.album.nil?
+						@cli.text_channel(@cli.current_channel, "#{current.file}")
+					else
+						@cli.text_channel(@cli.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+					end
 				end
 			end
 		end
@@ -132,7 +136,6 @@ class MumbleMPD
 		#@artist = current.artist
 		#@title = current.title
 		#@album = current.album
-		
 		#Check whether set_comment is available in underlying mumble-ruby.
 		begin
 			@cli.set_comment("")
@@ -245,6 +248,12 @@ class MumbleMPD
 					if message.match(/^seek [+-]?[0-9]{1,3}$/)
 						seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
 						@mpd.seek seekto
+						#status = @mpd.status
+						#puts status.class
+						#puts status.inspect
+						#puts status[0]
+						#puts status[":time"].inspect
+						#@cli.text_user(msg.actor, "Seeked to position #{status["time"][0]}/#{status["time"][1]}.")
 					end
 					if message.match(/^crossfade [0-9]{1,3}$/)
 						secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
