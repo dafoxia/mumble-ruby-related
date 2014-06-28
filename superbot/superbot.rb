@@ -28,11 +28,10 @@ class MumbleMPD
 		
 		#Read config file if available
 		begin
-			require_relative 'superbot_conf.rb'#
+			require_relative 'superbot_conf.rb'
 			ext_config()
 		rescue
-			puts "Config could not be loaded! Using default"
-			puts "#{$!}"
+			puts "Config could not be loaded! Using default configuration."
 		end
 		
 		@mumbleserver_host = ARGV[0].to_s
