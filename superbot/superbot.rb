@@ -341,17 +341,23 @@ class MumbleMPD
 										puts "#{$!}"
 									end
 								end
+							else
+							@cli.text_user(msg.actor, "I am following your steps, master.")
 							end
-							
 							@follow = true
 							@alreadyfollowing = true
-							@cli.text_user(msg.actor, "I am following your steps, master.")
 							currentuser = msg.actor
 							@following = Thread.new {
-							while @follow == true do
-								newchannel = @cli.users[currentuser].channel_id
-								@cli.join_channel(newchannel)
-								sleep(1)
+							begin
+								while @follow == true do
+									newchannel = @cli.users[currentuser].channel_id
+									@cli.join_channel(newchannel)
+									sleep(1)
+								end
+							rescue
+								puts "#{$!}"
+								@alreadyfollowing = false
+								Thread.kill(@following)
 							end
 						}
 					end
