@@ -412,10 +412,6 @@ class MumbleMPD
 							end
 						}
 					end
-					if message == 'test1'
-						@cli.text_user(msg.actor, "#{@set_comment_available}")
-						@cli.text_user(msg.actor, "#{@use_comment_for_status_display}")
-					end
 					if message == 'unstick'
 						if @sticky == false
 							@cli.text_user(msg.actor, "I am not sticked to a channel currently.")
