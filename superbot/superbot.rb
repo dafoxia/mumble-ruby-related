@@ -398,8 +398,16 @@ class MumbleMPD
 								if @cli.current_channel == channeluserisin
 									sleep(1)
 								else
-									@cli.join_channel(channeluserisin)
-									sleep(1)
+									begin
+										@cli.join_channel(channeluserisin)
+										sleep(1)
+									rescue ChannelNotFound
+										@cli.join_channel(@mumbleserver_targetchannel)
+										Thread.kill(@sticked)
+										if @debug
+											puts "#{$!}"
+										end
+									end
 								end
 							end
 						}
