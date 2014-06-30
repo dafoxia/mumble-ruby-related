@@ -399,6 +399,7 @@ class MumbleMPD
 									sleep(1)
 								else
 									@cli.join_channel(channeluserisin)
+									sleep(1)
 								end
 							end
 						}
