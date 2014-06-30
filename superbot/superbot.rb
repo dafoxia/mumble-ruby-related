@@ -401,7 +401,7 @@ class MumbleMPD
 									begin
 										@cli.join_channel(channeluserisin)
 										sleep(1)
-									rescue ChannelNotFound
+									rescue
 										@cli.join_channel(@mumbleserver_targetchannel)
 										Thread.kill(@sticked)
 										if @debug
