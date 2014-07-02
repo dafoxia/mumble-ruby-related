@@ -392,6 +392,7 @@ class MumbleMPD
 								end
 							end
 						end
+						@cli.text_user(msg.actor, "I am now sticked to this channel.")
 						@sticky = true
 						@alreadysticky = true
 						channeluserisin = @cli.users[msg.actor].channel_id
@@ -418,6 +419,7 @@ class MumbleMPD
 						if @sticky == false
 							@cli.text_user(msg.actor, "I am not sticked to a channel currently.")
 						else
+							@cli.text_user(msg.actor, "I am not sticked anymore")
 							@sticky = false
 							@alreadysticky = false
 							begin
