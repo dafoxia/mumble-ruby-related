@@ -355,7 +355,9 @@ class MumbleMPD
 									sleep(1)
 								end
 							rescue
-								puts "#{$!}"
+								if @debug
+									puts "#{$!}"
+								end
 								@alreadyfollowing = false
 								Thread.kill(@following)
 							end
