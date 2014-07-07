@@ -386,7 +386,7 @@ class MumbleMPD
 							@alreadysticky = false
 							begin
 								Thread.kill(@sticked)
-								@alreadysticky= false
+								@alreadysticky = false
 							rescue TypeError
 								if @debug
 									puts "#{$!}"
@@ -407,6 +407,7 @@ class MumbleMPD
 										@cli.join_channel(channeluserisin)
 										sleep(1)
 									rescue
+										@alreadysticky = false
 										@cli.join_channel(@mumbleserver_targetchannel)
 										Thread.kill(@sticked)
 										if @debug
