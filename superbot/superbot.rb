@@ -367,6 +367,7 @@ class MumbleMPD
 						if @follow == false
 							@cli.text_user(msg.actor, "I am not following anyone.")
 						else
+							@cli.text_user(msg.actor, "I will stop following.")
 							@follow = false
 							@alreadyfollowing = false
 							begin
@@ -381,7 +382,7 @@ class MumbleMPD
 					end
 					if message == 'stick'
 						if @alreadysticky == true
-							@cli.text_user(msg.actor, "I'm already following someone! Resetting...")
+							@cli.text_user(msg.actor, "I'm already sticked! Resetting...")
 							@alreadysticky = false
 							begin
 								Thread.kill(@sticked)
@@ -391,8 +392,9 @@ class MumbleMPD
 									puts "#{$!}"
 								end
 							end
+						else
+							@cli.text_user(msg.actor, "I am now sticked to this channel.")
 						end
-						@cli.text_user(msg.actor, "I am now sticked to this channel.")
 						@sticky = true
 						@alreadysticky = true
 						channeluserisin = @cli.users[msg.actor].channel_id
@@ -417,7 +419,7 @@ class MumbleMPD
 					end
 					if message == 'unstick'
 						if @sticky == false
-							@cli.text_user(msg.actor, "I am not sticked to a channel currently.")
+							@cli.text_user(msg.actor, "I am currently not sticked to a channel.")
 						else
 							@cli.text_user(msg.actor, "I am not sticked anymore")
 							@sticky = false
