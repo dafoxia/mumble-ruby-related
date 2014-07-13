@@ -165,23 +165,14 @@ class MumbleMPD
 
 			msg_target = @cli.users[msg.session]
 			
-			sender_is_registered = true
-			
-			begin
-				msg_userid = msg_target.user_id
-			rescue NoMethodError
+			if msg_target.user_id.nil?
 				msg_userid = -1
 				sender_is_registered = false
+			else
+				msg_userid = msg_target.user_id
+				sender_is_registered = true
 			end
 			
-			#if msg_target["user_id"].nil?
-			#	msg_userid = -1
-			#	sender_is_registered = false
-			#else
-			#	msg_userid = msg_target["user_id"]
-			#	sender_is_registered = true
-			#end
- 			
  			if @debug
 # 				begin    # One of these functions causes the bot to mute itself.
 # 					print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
@@ -210,42 +201,22 @@ class MumbleMPD
   			end
 			
 			if msg.actor.nil?
-				#Ignore text messages from the server
-				next
+				next #Ignore text messages from the server
 			end
-			
+		
 			#Some of the next two information we may need later...
 			msg_sender = @cli.users[msg.actor]
 			
 			#This is hacky because mumble uses -1 for user_id of unregistered users,
 			# while mumble-ruby seems to just omit the value for unregistered users.
 			# With this hacky thing commands from SuperUser are also being ignored.
-			sender_is_registered = true
-			
-			begin
-				msg_userid = msg_sender.user_id
-			rescue NoMethodError
+			if msg_sender.user_id.nil?
 				msg_userid = -1
 				sender_is_registered = false
+			else
+				msg_userid = msg_sender.user_id
+				sender_is_registered = true
 			end
-			
-			
-			#begin
-			#	msg_userid = msg_sender["user_id"].to_i
-			#	sender_is_registered = true
-			#rescue NoMethodError
-			#	msg_userid = -1
-			#	sender_is_registered = false
-			#end
-			
-			###OLD###
-			#if msg_sender["user_id"].nil?
-			#	msg_userid = -1
-			#	sender_is_registered = false
-			#else
-			#	msg_userid = msg_sender["user_id"]
-			#	sender_is_registered = true
-			#end
 			
 			if @listen_to_registered_users_only == true
 				if sender_is_registered == false
@@ -356,12 +327,12 @@ class MumbleMPD
 					if message == 'gotobed'
 						@cli.join_channel(@mumbleserver_targetchannel)
 						@mpd.pause = true
-						@cli.deafen true
+						@cli.me.deafen true
 					end
 					if message == 'wakeup'
 						@mpd.pause = false
-						@cli.deafen false
-						@cli.mute false
+						@cli.me.deafen false
+						@cli.me.mute false
 					end
 					if message == 'follow'
 							if @alreadyfollowing == true
@@ -558,8 +529,8 @@ class MumbleMPD
 					end
 					if message == 'play'
 						@mpd.play
-						@cli.deafen false
-						@cli.mute false
+						@cli.me.deafen false
+						@cli.me.mute false
 					end
 					if message == 'playlist'
 						songlist = @mpd.songs
