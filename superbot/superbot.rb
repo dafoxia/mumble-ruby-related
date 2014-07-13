@@ -33,7 +33,7 @@ class MumbleMPD
 		rescue
 			puts "Config could not be loaded! Using default configuration."
 		end
-		
+
 		@mumbleserver_host = ARGV[0].to_s
 		@mumbleserver_port = ARGV[1].to_i
 		@mumbleserver_username = ARGV[2].to_s
@@ -165,23 +165,36 @@ class MumbleMPD
 
 			msg_target = @cli.users[msg.session]
 			
-			if msg_target["user_id"].nil?
+			sender_is_registered = true
+			
+			begin
+				msg_userid = msg_target.user_id
+			rescue NoMethodError
 				msg_userid = -1
 				sender_is_registered = false
-			else
-				msg_userid = msg_target["user_id"]
-				sender_is_registered = true
 			end
+			
+			#if msg_target["user_id"].nil?
+			#	msg_userid = -1
+			#	sender_is_registered = false
+			#else
+			#	msg_userid = msg_target["user_id"]
+			#	sender_is_registered = true
+			#end
  			
-			if @debug
-				print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
-				puts "0: #{msg_target.inspect}"
-				puts "1: #{msg_target["user_id"]}"
-				puts "2: #{@cli.me.current_channel["channel_id"]}"
-				puts "3: #{msg_target["channel_id"]}"
-			end
+ 			if @debug
+# 				begin    # One of these functions causes the bot to mute itself.
+# 					print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
+# 					puts "0: #{msg_target.inspect}"
+# 					puts "1: #{msg_target.user_id}"
+# 					puts "2: #{@cli.me.current_channel.channel_id}"
+# 					puts "3: #{msg_target.channel_id}"
+# 				rescue NoMethodError
+# 					puts "Warning..."
+# 				end
+ 			end
 							
-			if @cli.me.current_channel["channel_id"] == msg_target["channel_id"]
+			if @cli.me.current_channel.channel_id == msg_target.channel_id
 				if (@stop_on_unregistered_users == true && sender_is_registered == false)
 					@mpd.stop
 					@cli.text_channel(@cli.me.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
@@ -190,8 +203,15 @@ class MumbleMPD
 		end
 		
 		@cli.on_text_message do |msg|
-			if @debug
-				print "\n\nDEBUG(on_text_message): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
+  			if @debug
+ 				####Do not enable the next line or the bot will mute himself :P DEBUG"####
+  				#print "\n\nDEBUG(on_text_message): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
+				#puts "0: #{msg_sender}"
+  			end
+			
+			if msg.actor.nil?
+				#Ignore text messages from the server
+				next
 			end
 			
 			#Some of the next two information we may need later...
@@ -200,14 +220,25 @@ class MumbleMPD
 			#This is hacky because mumble uses -1 for user_id of unregistered users,
 			# while mumble-ruby seems to just omit the value for unregistered users.
 			# With this hacky thing commands from SuperUser are also being ignored.
+			sender_is_registered = true
+			
 			begin
-				msg_userid = msg_sender["user_id"].to_i
-				sender_is_registered = true
+				msg_userid = msg_sender.user_id
 			rescue NoMethodError
 				msg_userid = -1
 				sender_is_registered = false
 			end
 			
+			
+			#begin
+			#	msg_userid = msg_sender["user_id"].to_i
+			#	sender_is_registered = true
+			#rescue NoMethodError
+			#	msg_userid = -1
+			#	sender_is_registered = false
+			#end
+			
+			###OLD###
 			#if msg_sender["user_id"].nil?
 			#	msg_userid = -1
 			#	sender_is_registered = false
@@ -218,7 +249,10 @@ class MumbleMPD
 			
 			if @listen_to_registered_users_only == true
 				if sender_is_registered == false
-					puts "Debug: Not listening because @listen_to_registered_users_only is true and sender is unregistered."
+					if @debug
+						puts "Debug: Not listening because @listen_to_registered_users_only is true and sender is unregistered."
+					end
+					
 					next
 				end
 			end	
