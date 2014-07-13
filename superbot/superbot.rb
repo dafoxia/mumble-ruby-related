@@ -59,7 +59,7 @@ class MumbleMPD
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
 		@mpd.on :volume do |volume|
-			@cli.text_channel(@cli.current_channel, "Volume was set to: #{volume}.")
+			@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}.")
 		end
 		
 		@mpd.on :random do |random|
@@ -69,7 +69,7 @@ class MumbleMPD
 				random = "Off"
 			end
 			
-			@cli.text_channel(@cli.current_channel, "Random mode is now: #{random}.")
+			@cli.text_channel(@cli.me.current_channel, "Random mode is now: #{random}.")
 		end
 		
 		@mpd.on :single do |single|
@@ -79,7 +79,7 @@ class MumbleMPD
 				single = "Off"
 			end
 			
-			@cli.text_channel(@cli.current_channel, "Single mode is now: #{single}.")
+			@cli.text_channel(@cli.me.current_channel, "Single mode is now: #{single}.")
 		end
 		
 		@mpd.on :consume do |consume|
@@ -89,15 +89,15 @@ class MumbleMPD
 				consume = "Off"
 			end
 
-			@cli.text_channel(@cli.current_channel, "Consume mode is now: #{consume}.")
+			@cli.text_channel(@cli.me.current_channel, "Consume mode is now: #{consume}.")
 		end
 		
 		@mpd.on :xfade do |xfade|
 			if xfade.to_i == 0
 				xfade = "Off"
-				@cli.text_channel(@cli.current_channel, "Crossfade is now: #{xfade}.")
+				@cli.text_channel(@cli.me.current_channel, "Crossfade is now: #{xfade}.")
 			else
-				@cli.text_channel(@cli.current_channel, "Crossfade time (in seconds) is now: #{xfade}.")
+				@cli.text_channel(@cli.me.current_channel, "Crossfade time (in seconds) is now: #{xfade}.")
 			end
 		end
 		
@@ -107,7 +107,7 @@ class MumbleMPD
 			else
 				repeat = "Off"
 			end
-			@cli.text_channel(@cli.current_channel, "Repeat mode is now: #{repeat}.")
+			@cli.text_channel(@cli.me.current_channel, "Repeat mode is now: #{repeat}.")
 		end
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
@@ -121,9 +121,9 @@ class MumbleMPD
 					end
 				else
 					if current.artist.nil? && current.title.nil? && current.album.nil?
-						@cli.text_channel(@cli.current_channel, "#{current.file}")
+						@cli.text_channel(@cli.me.current_channel, "#{current.file}")
 					else
-						@cli.text_channel(@cli.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+						@cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
 					end
 				end
 			end
@@ -135,7 +135,7 @@ class MumbleMPD
 		sleep(1)
 		@cli.join_channel(@mumbleserver_targetchannel)
 		#sleep(1)
-		@cli.stream_raw_audio(@mpd_fifopath)
+		@cli.player.stream_named_pipe(@mpd_fifopath)
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
 		
@@ -177,14 +177,14 @@ class MumbleMPD
 				print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
 				puts "0: #{msg_target.inspect}"
 				puts "1: #{msg_target["user_id"]}"
-				puts "2: #{@cli.current_channel["channel_id"]}"
+				puts "2: #{@cli.me.current_channel["channel_id"]}"
 				puts "3: #{msg_target["channel_id"]}"
 			end
 							
-			if @cli.current_channel["channel_id"] == msg_target["channel_id"]
+			if @cli.me.current_channel["channel_id"] == msg_target["channel_id"]
 				if (@stop_on_unregistered_users == true && sender_is_registered == false)
 					@mpd.stop
-					@cli.text_channel(@cli.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
+					@cli.text_channel(@cli.me.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
 				end
 			end
 		end
@@ -303,10 +303,10 @@ class MumbleMPD
 					if message == 'ch'
 						channeluserisin = msg_sender["channel_id"]
 
-						if @cli.current_channel["channel_id"].to_i == channeluserisin.to_i
+						if @cli.me.current_channel["channel_id"].to_i == channeluserisin.to_i
 							@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
 						else
-							@cli.text_channel(@cli.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
+							@cli.text_channel(@cli.me.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
 							@cli.join_channel(channeluserisin)
 						end
 					end
@@ -400,7 +400,7 @@ class MumbleMPD
 						channeluserisin = @cli.users[msg.actor].channel_id
 						@sticked = Thread.new {
 							while @sticky == true do
-								if @cli.current_channel == channeluserisin
+								if @cli.me.current_channel == channeluserisin
 									sleep(1)
 								else
 									begin
@@ -464,7 +464,7 @@ class MumbleMPD
 					if message == 'v-'
 						volume = ((@mpd.volume).to_i - 5)
 						if volume < 0
-							#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
+							#@cli.text_channel(@cli.me.current_channel, "Volume is already 0.")
 							volume = 0
 						end
 						
@@ -473,7 +473,7 @@ class MumbleMPD
 					if message == 'v--'
 						volume = ((@mpd.volume).to_i - 10)
 						if volume < 0
-							#@cli.text_channel(@cli.current_channel, "Volume is already 0.")
+							#@cli.text_channel(@cli.me.current_channel, "Volume is already 0.")
 							volume = 0
 						end
 						
@@ -482,7 +482,7 @@ class MumbleMPD
 					if message == 'v+'
 						volume = ((@mpd.volume).to_i + 5)
 						if volume > 100
-							#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
+							#@cli.text_channel(@cli.me.current_channel, "Volume is already 100.")
 							volume = 100
 						end
 						
@@ -491,7 +491,7 @@ class MumbleMPD
 					if message == 'v++'
 						volume = ((@mpd.volume).to_i + 10)
 						if volume > 100
-							#@cli.text_channel(@cli.current_channel, "Volume is already 100.")
+							#@cli.text_channel(@cli.me.current_channel, "Volume is already 100.")
 							volume = 100
 						end
 						
