@@ -306,9 +306,9 @@ class MumbleMPD
 						@mpd.crossfade = secs
 					end
 					if message == 'ch'
-						channeluserisin = msg_sender["channel_id"]
+						channeluserisin = msg_sender.channel_id
 
-						if @cli.me.current_channel["channel_id"].to_i == channeluserisin.to_i
+						if @cli.me.current_channel.channel_id.to_i == channeluserisin.to_i
 							@cli.text_user(msg.actor, "Hey superbrain, I am already in your channel :)")
 						else
 							@cli.text_channel(@cli.me.current_channel, "Hey, \"#{@cli.users[msg.actor].name}\" asked me to make some music, going now. Bye :)")
