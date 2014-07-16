@@ -347,7 +347,7 @@ class MumbleMPD
 									end
 								end
 							else
-								@cli.text_user(msg.actor, "I am following your steps, master.")
+							@cli.text_user(msg.actor, "I am following your steps, master.")
 							end
 							@follow = true
 							@alreadyfollowing = true
