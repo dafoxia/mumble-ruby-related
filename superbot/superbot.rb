@@ -328,6 +328,11 @@ class MumbleMPD
 						@cli.join_channel(@mumbleserver_targetchannel)
 						@mpd.pause = true
 						@cli.me.deafen true
+						begin
+							Thread.kill(@following)
+							@alreadyfollowing = false
+						rescue
+						end
 					end
 					if message == 'wakeup'
 						@mpd.pause = false
@@ -377,6 +382,7 @@ class MumbleMPD
 							@alreadyfollowing = false
 							begin
 								Thread.kill(@following)
+								@alreadyfollowing = false
 							rescue TypeError
 								if @debug
 									puts "#{$!}"
