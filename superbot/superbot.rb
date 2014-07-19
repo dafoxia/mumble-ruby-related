@@ -257,10 +257,8 @@ class MumbleMPD
 								+ "<br />" \
 								+ "<u>Volume:</u><br />" \
 								+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
-								+ "#{cc}<b>v+</b> Increase volume by 5%.<br />" \
-								+ "#{cc}<b>v-</b> Decrease volume by 5%.<br />" \
-								+ "#{cc}<b>v++</b> Increase volume by 10%.<br />" \
-								+ "#{cc}<b>v--</b> Decrease volume by 10%.<br />" \
+								+ "#{cc}<b>v+</b> Increase volume by 5% for each plus sign. For example #{cc}v+++++ increases the volume by 25%.<br />" \
+								+ "#{cc}<b>v-</b> Decrease volume by 5% for each minus sign.<br />" \
 								+ "<br />" \
 								+ "<u>Channel control:</u><br />" \
 								+ "#{cc}<b>stick</b> Sticks the bot to your current channel.<br />" \
@@ -472,8 +470,9 @@ class MumbleMPD
 						end
 							
 					end
-					if message == 'v-'
-						volume = ((@mpd.volume).to_i - 5)
+					if message.match(/^v[-]+$/)
+						multi = message.match(/^v([-]+)$/)[1].scan(/\-/).length
+						volume = ((@mpd.volume).to_i - 5 * multi)
 						if volume < 0
 							#@cli.text_channel(@cli.me.current_channel, "Volume is already 0.")
 							volume = 0
@@ -481,28 +480,11 @@ class MumbleMPD
 						
 						@mpd.volume = volume
 					end
-					if message == 'v--'
-						volume = ((@mpd.volume).to_i - 10)
-						if volume < 0
+					if message.match(/^v[+]+$/)
+						multi = message.match(/^v([+]+)$/)[1].scan(/\+/).length
+						volume = ((@mpd.volume).to_i + 5 * multi)
+						if volume > 100
 							#@cli.text_channel(@cli.me.current_channel, "Volume is already 0.")
-							volume = 0
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'v+'
-						volume = ((@mpd.volume).to_i + 5)
-						if volume > 100
-							#@cli.text_channel(@cli.me.current_channel, "Volume is already 100.")
-							volume = 100
-						end
-						
-						@mpd.volume = volume
-					end
-					if message == 'v++'
-						volume = ((@mpd.volume).to_i + 10)
-						if volume > 100
-							#@cli.text_channel(@cli.me.current_channel, "Volume is already 100.")
 							volume = 100
 						end
 						
