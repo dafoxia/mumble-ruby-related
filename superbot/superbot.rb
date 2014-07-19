@@ -59,7 +59,7 @@ class MumbleMPD
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
 		@mpd.on :volume do |volume|
-			@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}.")
+			@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}%.")
 		end
 		
 		@mpd.on :random do |random|
@@ -460,6 +460,10 @@ class MumbleMPD
 							end
 						end
 					end
+					if message == 'v'
+						volume = @mpd.volume
+						@cli.text_user(msg.actor, "Current volume is #{volume}%.")
+					end	
 					if message.match(/^v [0-9]{1,3}$/)
 						volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
 						
