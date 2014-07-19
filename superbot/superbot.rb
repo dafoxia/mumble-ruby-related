@@ -256,7 +256,7 @@ class MumbleMPD
 								+ "#{cc}<b>seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />" \
 								+ "<br />" \
 								+ "<u>Volume:</u><br />" \
-								+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>.<br />" \
+								+ "#{cc}<b>v</b> <i>value</i> - Set volume to <i>value</i>. If the value is omitted bot shows the current volume.<br />" \
 								+ "#{cc}<b>v+</b> Increase volume by 5% for each plus sign. For example #{cc}v+++++ increases the volume by 25%.<br />" \
 								+ "#{cc}<b>v-</b> Decrease volume by 5% for each minus sign.<br />" \
 								+ "<br />" \
