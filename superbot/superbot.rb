@@ -277,7 +277,7 @@ class MumbleMPD
 								+ "<u>Playlists:</u><br />" \
 								+ "#{cc}<b>playlists</b> Show a list of all playlists.<br />" \
 								+ "#{cc}<b>playlist <i>number</i></b> Load the playlist and start it. Use #{cc}playlists to get a list of all playlists.<br />" \
-						                + "#{cc}<b>playlist</b>Show all items of the currently loaded playlist + the name of it.<br />" \
+						        + "#{cc}<b>playlist</b> Show all items of the currently loaded playlist + the name of it.<br />" \
 								+ "#{cc}<b>clear</b> Clears the current queue.<br />" \
 								+ "<br />" \
 								+ "<u>Specials:</u><br />" \
@@ -286,7 +286,7 @@ class MumbleMPD
 								+ "#{cc}<b>ch</b> Let the bot switch into your channel.<br />" \
 								+ "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
 								+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
-						                + "#{cc}<b>help</b> Shows this help.<br />" \
+						        + "#{cc}<b>help</b> Shows this help.<br />" \
 								+ "<hr /><span style='color:grey;font-size:10px;'><a href='http://wiki.natenom.com/w/Superbot'>See here for my documentation.</a></span>")
 					end
 					if message.match(/^seek [+-]?[0-9]{1,3}$/)
