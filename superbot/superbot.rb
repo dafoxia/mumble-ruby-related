@@ -486,7 +486,6 @@ class MumbleMPD
 						else
 							@cli.text_user(msg.actor, "Volume can be within a range of 0 to 100")
 						end
-							
 					end
 					if message.match(/^v[-]+$/)
 						multi = message.match(/^v([-]+)$/)[1].scan(/\-/).length
@@ -532,7 +531,6 @@ class MumbleMPD
 					end
 					if message == 'stop'
 						@mpd.stop
-						#@cli.text_user(msg.actor, "Music stopped")
 					end
 					if message == 'play'
 						@mpd.play
