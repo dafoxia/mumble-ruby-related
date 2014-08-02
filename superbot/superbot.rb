@@ -315,12 +315,18 @@ class MumbleMPD
 					if message.match(/^seek [+-]?[0-9]{1,3}$/)
 						seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
 						@mpd.seek seekto
-						#status = @mpd.status
-						#puts status.class
-						#puts status.inspect
-						#puts status[0]
-						#puts status[":time"].inspect
-						#@cli.text_user(msg.actor, "Seeked to position #{status["time"][0]}/#{status["time"][1]}.")
+						status = @mpd.status
+
+						#Code from http://stackoverflow.com/questions/19595840/rails-get-the-time-difference-in-hours-minutes-and-seconds
+						now_mm, now_ss = status[:time][0].divmod(60) #Minutes and seconds of current time within the song.
+						now_hh, now_mm = now_mm.divmod(60)
+						total_mm, total_ss = status[:time][1].divmod(60) #Minutes and seconds of total time of the song.
+						total_hh, total_mm = total_mm.divmod(60)
+						
+						now = "%02d:%02d:%02d" % [now_hh, now_mm, now_ss]
+						total = "%02d:%02d:%02d" % [total_hh, total_mm, total_ss]
+						
+						@cli.text_channel(@cli.me.current_channel, "Seeked to position #{now}/#{total}.")
 					end
 					if message.match(/^crossfade [0-9]{1,3}$/)
 						secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
