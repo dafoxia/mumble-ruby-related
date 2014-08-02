@@ -506,7 +506,7 @@ class MumbleMPD
 						multi = message.match(/^v([-]+)$/)[1].scan(/\-/).length
 						volume = ((@mpd.volume).to_i - 5 * multi)
 						if volume < 0
-							@cli.text_channel(@cli.me.current_channel, "Volume can't be set to < 0.")
+							@cli.text_channel(@cli.me.current_channel, "Volume can't be set to &lt; 0.")
 							volume = 0
 						end
 						
@@ -516,7 +516,7 @@ class MumbleMPD
 						multi = message.match(/^v([+]+)$/)[1].scan(/\+/).length
 						volume = ((@mpd.volume).to_i + 5 * multi)
 						if volume > 100
-							@cli.text_channel(@cli.me.current_channel, "Volume can't be set to > 100.")
+							@cli.text_channel(@cli.me.current_channel, "Volume can't be set to &gt; 100.")
 							volume = 100
 						end
 						
