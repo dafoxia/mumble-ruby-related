@@ -72,6 +72,20 @@ class MumbleMPD
 			@cli.text_channel(@cli.me.current_channel, "Random mode is now: #{random}.")
 		end
 		
+		@mpd.on :state do |state|
+			if state == :pause
+				@cli.text_channel(@cli.me.current_channel, "Music paused.")
+			end
+			
+			if state == :stop
+				@cli.text_channel(@cli.me.current_channel, "Music stopped.")
+			end
+			
+			if state == :play
+				@cli.text_channel(@cli.me.current_channel, "Music start playing.")
+			end
+		end
+		
 		@mpd.on :single do |single|
 			if single
 				single = "On"
@@ -515,15 +529,10 @@ class MumbleMPD
 					end
 					if message == 'pp'
 						@mpd.pause = !@mpd.paused?
-						if @mpd.paused?
-							@cli.text_user(msg.actor, "Music paused")
-						else
-							@cli.text_user(msg.actor, "Music unpaused")
-						end
 					end
 					if message == 'stop'
 						@mpd.stop
-						@cli.text_user(msg.actor, "Music stopped")
+						#@cli.text_user(msg.actor, "Music stopped")
 					end
 					if message == 'play'
 						@mpd.play
@@ -552,7 +561,7 @@ class MumbleMPD
 							@mpd.clear
 							playlist.load
 							@mpd.play
-							@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now, have fun :)")
+							@cli.text_user(msg.actor, "The playlist \"#{playlist.name}\" was loaded and starts now. Have fun :)")
 						rescue
 							@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
 						end
