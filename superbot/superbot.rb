@@ -62,6 +62,14 @@ class MumbleMPD
 			@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}%.")
 		end
 		
+		@mpd.on :error do |error|
+			@cli.text_channel(@cli.me.current_channel, "<span style='color:red;font-weight:bold;>An error occured: #{error}.</span>")
+		end
+		
+		@mpd.on :updating_db do |jobid|
+			@cli.text_channel(@cli.me.current_channel, "I am running a database update just now ... new songs :)<br />My job id is: #{jobid}.")
+		end
+		
 		@mpd.on :random do |random|
 			if random
 				random = "On"
