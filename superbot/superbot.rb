@@ -515,9 +515,15 @@ class MumbleMPD
 					end
 					if message == 'pp'
 						@mpd.pause = !@mpd.paused?
+						if @mpd.paused?
+							@cli.text_user(msg.actor, "Music paused")
+						else
+							@cli.text_user(msg.actor, "Music unpaused")
+						end
 					end
 					if message == 'stop'
 						@mpd.stop
+						@cli.text_user(msg.actor, "Music stopped")
 					end
 					if message == 'play'
 						@mpd.play
@@ -527,7 +533,6 @@ class MumbleMPD
 					if message == 'playlist'
 						songlist = @mpd.songs
 						puts songlist.inspect
-						
 					end
 					if message == 'playlists'
 						text_out = ""
