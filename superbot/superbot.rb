@@ -24,8 +24,7 @@ class MumbleMPD
 							+ "<b>Album: </b>DISABLED<br /><br />" \
 							+ "<b>Write %shelp to me, to get a list of my commands!"
 		#whitelist = [83,48,110,90] #not yet implemented
-		
-		
+				
 		#Read config file if available
 		begin
 			require_relative 'superbot_conf.rb'
@@ -236,7 +235,7 @@ class MumbleMPD
 		if @cli.me.current_channel.channel_id == msg_target.channel_id
 			if (@stop_on_unregistered_users == true && sender_is_registered == false)
 				@mpd.stop
-				@cli.text_channel(@cli.me.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
+				@cli.text_channel(@cli.me.current_channel, "<span style='color:red;'>An unregistered user currently joined or is acting in our channel. I stopped the music.</span>")
 			end
 		end
 	end
