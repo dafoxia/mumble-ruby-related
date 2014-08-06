@@ -59,8 +59,59 @@ class MumbleMPD
 			conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
 		end
 	end
-	
-	def mpdcallbacks
+
+	def start
+		@cli.connect
+		sleep(1)
+		@cli.join_channel(@mumbleserver_targetchannel)
+		#sleep(1)
+		@cli.player.stream_named_pipe(@mpd_fifopath)
+ 
+		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
+		
+		#current = @mpd.current_song
+		#@artist = current.artist
+		#@title = current.title
+		#@album = current.album
+		#Check whether set_comment is available in underlying mumble-ruby.
+		begin
+			@cli.set_comment("")
+			@set_comment_available = true
+		rescue NoMethodError
+			if @debug
+				puts "#{$!}"
+			end
+			@set_comment_available = false
+		end
+		
+		#Should not neccessary because "@mpd.on :song do |current|" sets the comment already if playing a song.
+		#if @set_comment_available == true
+		#	#@cli.set_comment(@template_if_comment_disabled)
+		#end
+		
+		@cli.on_user_state do |msg|
+			handle_user_state_changes(msg)
+		end
+
+		@cli.on_text_message do |msg|
+			handle_text_message(msg)
+		end
+				
+		begin
+			t = Thread.new do
+				$stdin.gets
+			end
+			
+			#The following two lines prevent the bot from spamming all the current mpd settings into the chat.
+			sleep(3)
+			initialize_mpdcallbacks
+			
+			t.join
+		rescue Interrupt => e
+		end
+	end
+		
+	def initialize_mpdcallbacks
 		@mpd.on :volume do |volume|
 			@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}%.")
 		end
@@ -134,6 +185,7 @@ class MumbleMPD
 			end
 			@cli.text_channel(@cli.me.current_channel, "Repeat mode is now: #{repeat}.")
 		end
+		
 		@mpd.on :song do |current|
 			if not current.nil? #Would crash if playlist was empty.
 				if @use_comment_for_status_display == true && @set_comment_available == true
@@ -154,51 +206,22 @@ class MumbleMPD
 			end
 		end
 	end
- 
-	def start
-		@cli.connect
-		sleep(1)
-		@cli.join_channel(@mumbleserver_targetchannel)
-		#sleep(1)
-		@cli.player.stream_named_pipe(@mpd_fifopath)
- 
-		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
+ 	
+	def handle_user_state_changes(msg)
+		#msg.actor = session_id of user who did something on someone, if self done, both is the same.
+		#msg.session = session_id of the target
+
+		msg_target = @cli.users[msg.session]
 		
-		#current = @mpd.current_song
-		#@artist = current.artist
-		#@title = current.title
-		#@album = current.album
-		#Check whether set_comment is available in underlying mumble-ruby.
-		begin
-			@cli.set_comment("")
-			@set_comment_available = true
-		rescue NoMethodError
-			if @debug
-				puts "#{$!}"
-			end
-			@set_comment_available = false
+		if msg_target.user_id.nil?
+			msg_userid = -1
+			sender_is_registered = false
+		else
+			msg_userid = msg_target.user_id
+			sender_is_registered = true
 		end
 		
-		#Should not neccessary because "@mpd.on :song do |current|" sets the comment already if playing a song.
-		#if @set_comment_available == true
-		#	#@cli.set_comment(@template_if_comment_disabled)
-		#end
-		
-		@cli.on_user_state do |msg|
-			#msg.actor = session_id of user who did something on someone, if self done, both is the same.
-			#msg.session = session_id of the target
-
-			msg_target = @cli.users[msg.session]
-			
-			if msg_target.user_id.nil?
-				msg_userid = -1
-				sender_is_registered = false
-			else
-				msg_userid = msg_target.user_id
-				sender_is_registered = true
-			end
-			
- 			if @debug
+		if @debug
 # 				begin    # One of these functions causes the bot to mute itself.
 # 					print "\n\nDEBUG(on_user_state): Message received.\nFrom: \"#{@cli.users[msg.actor].inspect}\"\nContent: #{msg.inspect}\n"
 # 					puts "0: #{msg_target.inspect}"
@@ -208,30 +231,13 @@ class MumbleMPD
 # 				rescue NoMethodError
 # 					puts "Warning..."
 # 				end
- 			end
-							
-			if @cli.me.current_channel.channel_id == msg_target.channel_id
-				if (@stop_on_unregistered_users == true && sender_is_registered == false)
-					@mpd.stop
-					@cli.text_channel(@cli.me.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
-				end
-			end
 		end
-
-		@cli.on_text_message do |msg|
-			handle_text_message(msg)
-		end
-		
-		
-		begin
-			t = Thread.new do
-				$stdin.gets
+						
+		if @cli.me.current_channel.channel_id == msg_target.channel_id
+			if (@stop_on_unregistered_users == true && sender_is_registered == false)
+				@mpd.stop
+				@cli.text_channel(@cli.me.current_channel, "Sorry guys, an unregistered users joined our channel. I must stop the music in order to avoid legal problems.")
 			end
-			
-			sleep(3)
-			mpdcallbacks
-			t.join
-		rescue Interrupt => e
 		end
 	end
 	
@@ -335,6 +341,7 @@ class MumbleMPD
 							+ "#{cc}<b>stats</b> Shows some MPD statistics." \
 							+ "<hr /><span style='color:grey;font-size:10px;'><a href='http://wiki.natenom.com/w/Superbot'>See here for my documentation.</a></span>")
 				end
+		
 				if message.match(/^seek [+-]?[0-9]{1,3}$/)
 					seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
 					@mpd.seek seekto
@@ -351,10 +358,12 @@ class MumbleMPD
 					
 					@cli.text_channel(@cli.me.current_channel, "Seeked to position #{now}/#{total}.")
 				end
+				
 				if message.match(/^crossfade [0-9]{1,3}$/)
 					secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
 					@mpd.crossfade = secs
 				end
+				
 				if message == 'ch'
 					channeluserisin = msg_sender.channel_id
 
@@ -365,15 +374,19 @@ class MumbleMPD
 						@cli.join_channel(channeluserisin)
 					end
 				end
+				
 				if message == 'debug'
 					@cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
 				end
+				
 				if message == 'next'
 					@mpd.next
 				end
+				
 				if message == 'prev'
 					@mpd.previous
 				end
+				
 				if message == 'gotobed'
 					@cli.join_channel(@mumbleserver_targetchannel)
 					@mpd.pause = true
@@ -384,11 +397,13 @@ class MumbleMPD
 					rescue
 					end
 				end
+				
 				if message == 'wakeup'
 					@mpd.pause = false
 					@cli.me.deafen false
 					@cli.me.mute false
 				end
+				
 				if message == 'follow'
 						if @alreadyfollowing == true
 							@cli.text_user(msg.actor, "I am already following someone! But from now on I will follow you, master.")
@@ -423,6 +438,7 @@ class MumbleMPD
 						end
 					}
 				end
+				
 				if message == 'unfollow'
 					if @follow == false
 						@cli.text_user(msg.actor, "I am not following anyone.")
@@ -441,6 +457,7 @@ class MumbleMPD
 						end
 					end
 				end
+				
 				if message == 'stick'
 					if @alreadysticky == true
 						@cli.text_user(msg.actor, "I'm already sticked! Resetting...")
@@ -479,6 +496,7 @@ class MumbleMPD
 						end
 					}
 				end
+				
 				if message == 'unstick'
 					if @sticky == false
 						@cli.text_user(msg.actor, "I am currently not sticked to a channel.")
@@ -495,6 +513,7 @@ class MumbleMPD
 						end
 					end
 				end
+				
 				if message == 'displayinfo'
 					begin
 						if @use_comment_for_status_display == true
@@ -512,10 +531,12 @@ class MumbleMPD
 						end
 					end
 				end
+				
 				if message == 'v'
 					volume = @mpd.volume
 					@cli.text_user(msg.actor, "Current volume is #{volume}%.")
 				end	
+				
 				if message.match(/^v [0-9]{1,3}$/)
 					volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
 					
@@ -525,6 +546,7 @@ class MumbleMPD
 						@cli.text_user(msg.actor, "Volume can be within a range of 0 to 100")
 					end
 				end
+				
 				if message.match(/^v[-]+$/)
 					multi = message.match(/^v([-]+)$/)[1].scan(/\-/).length
 					volume = ((@mpd.volume).to_i - 5 * multi)
@@ -535,6 +557,7 @@ class MumbleMPD
 					
 					@mpd.volume = volume
 				end
+				
 				if message.match(/^v[+]+$/)
 					multi = message.match(/^v([+]+)$/)[1].scan(/\+/).length
 					volume = ((@mpd.volume).to_i + 5 * multi)
@@ -545,44 +568,56 @@ class MumbleMPD
 					
 					@mpd.volume = volume
 				end
+				
 				if message == 'clear'
 					@mpd.clear
 					@cli.text_user(msg.actor, "The playqueue was cleared.")
 				end
+				
 				if message == 'kaguBe' || message == '42'
 					@cli.text_user(msg.actor, "<a href='http://wiki.natenom.de/sammelsurium/kagube'>All glory to kaguBe!</a>")
 				end
+				
 				if message == 'random'
 					@mpd.random = !@mpd.random?
 				end
+				
 				if message == 'repeat'
 					@mpd.repeat = !@mpd.repeat?
 				end
+				
 				if message == 'single'
 					@mpd.single = !@mpd.single?
 				end
+				
 				if message == 'consume'
 					@mpd.consume = !@mpd.consume?
 				end
+				
 				if message == 'pp'
 					@mpd.pause = !@mpd.paused?
 				end
+				
 				if message == 'stop'
 					@mpd.stop
 				end
+				
 				if message == 'play'
 					@mpd.play
 					@cli.me.deafen false
 					@cli.me.mute false
 				end
+				
 				if message == 'playlist'
 					songlist = @mpd.songs
 					puts songlist.inspect
 				end
+				
 				if message == 'stats'
 					stats = @mpd.stats
 					@cli.text_user(msg.actor, "MPD stats:<br />#{stats.inspect}")
 				end
+				
 				if message == 'playlists'
 					text_out = ""
 					counter = 0
@@ -593,6 +628,7 @@ class MumbleMPD
 					
 					@cli.text_user(msg.actor, "I know the following playlists:<br />#{text_out}")
 				end
+				
 				if message.match(/^playlist [0-9]{1,3}.*$/)
 					playlist_id = message.match(/^playlist ([0-9]{1,3})$/)[1].to_i
 					
@@ -606,17 +642,21 @@ class MumbleMPD
 						@cli.text_user(msg.actor, "Sorry, the given playlist id does not exist.")
 					end
 				end
+				
 				if message == 'status'
 					status = @mpd.status
 					@cli.text_user(msg.actor, "Sorry, this is still the raw message I get from mpd...:<br />#{status.inspect}")
 				end
+				
 				if message.match(/[fF][uU][cC][kK]/)
 					@cli.text_user(msg.actor, "Fuck is an English-language word, a profanity which refers to the act of sexual intercourse and is also commonly used to denote disdain or as an intensifier. Its origin is obscure; it is usually considered to be first attested to around 1475, but may be considerably older. In modern usage, the term fuck and its derivatives (such as fucker and fucking) can be used in the position of a noun, a verb, an adjective or an adverb.<br />Source: <a href='http://en.wikipedia.org/wiki/Fuck'>Wikipedia</a>")
 				end
+				
 				if message == 'file'
 					current = @mpd.current_song
 					@cli.text_user(msg.actor, "Filename of currently played song:<br />#{current.file}</span>")
 				end
+				
 				if message == 'song'
 					current = @mpd.current_song
 					if not current.nil? #Would crash if playlist was empty.
