@@ -61,9 +61,15 @@ class MumbleMPD
 
 	def start
 		@cli.connect
-		sleep(1)
+		
+		while not @cli.connected? do
+			sleep(0.5)
+			if @debug
+				puts "Connecting to the server is still ongoing."
+			end
+		end
+		
 		@cli.join_channel(@mumbleserver_targetchannel)
-		#sleep(1)
 		@cli.player.stream_named_pipe(@mpd_fifopath)
  
 		@mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
