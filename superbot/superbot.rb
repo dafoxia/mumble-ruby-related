@@ -8,6 +8,8 @@ require 'thread'
 class MumbleMPD
 	def initialize
 		#Initialize default values
+		@history = Array.new
+		@maxhistory = 25
 		@controlstring = "."
 		@debug = false
 		@listen_to_private_message_only = true
@@ -59,6 +61,20 @@ class MumbleMPD
 		end
 	end
 
+	def addtohistory(command, username)
+		#Saves the last x commands and usernames in an array for debug.
+		#Delete the first element and add this one to the end of the list == rotating ? :)
+		
+		if not @history.empty?
+			@history.delete(0)
+		end
+		
+		time = Time.now
+		timestring = "%02d:%02d:%02d (%06d)" % [time.hour, time.min, time.sec, time.usec]
+		
+		@history.push("%s - %s: %s" % [timestring, username, command])
+	end
+		
 	def start
 		@cli.connect
 		
@@ -307,8 +323,11 @@ class MumbleMPD
 							+ "<u>Controls:</u><br />" \
 							+ "#{cc}<b>play</b> Start playing.<br />" \
 							+ "#{cc}<b>pp</b> Toogle play/pause.<br />" \
-							+ "#{cc}<b>next</b> Play next song in the playlist.<br />" \
-							+ "#{cc}<b>stop</b> Stop the playlist.<br />" \
+							+ "#{cc}<b>next</b> Skip to next song in the playlist.<br />" \
+					                + "#{cc}<b>next+</b> Skip <number of +> songs in the playlist. For example #{cc}next+++ does three times #{cc}next<br />" \
+							+ "#{cc}<b>prev</b> Plays the previous song in the playlist.<br />" \
+					                + "#{cc}<b>prev+</b> Jump <number of +> songs backwards in the playlist. For example #{cc}prev+++ does three times #{cc}prev<br />" \
+					                + "#{cc}<b>stop</b> Stop the playlist.<br />" \
 							+ "#{cc}<b>seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />" \
 							+ "<br />" \
 							+ "<u>Volume:</u><br />" \
@@ -343,7 +362,8 @@ class MumbleMPD
 							+ "#{cc}<b>song</b> Show the currently played song information.<br />If this information is empty, try #{cc}file instead.<br />" \
 							+ "#{cc}<b>file</b> Show the filename of the currently played song if #{cc}song does not contain useful information.<br />" \
 							+ "#{cc}<b>help</b> Shows this help.<br />" \
-							+ "#{cc}<b>stats</b> Shows some MPD statistics." \
+							+ "#{cc}<b>stats</b> Shows some MPD statistics.<br />" \
+					                + "#{cc}<b>history</b> Shows the history of the last #{@maxhistory} commands." \
 							+ "<hr /><span style='color:grey;font-size:10px;'><a href='http://wiki.natenom.com/w/Superbot'>See here for my documentation.</a></span>")
 				end
 		
@@ -382,6 +402,10 @@ class MumbleMPD
 				
 				if message == 'debug'
 					@cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
+				end
+				
+				if message == 'history'
+					@cli.text_user(msg.actor, @history.join("<br />"))
 				end
 				
 				if message == 'next'
@@ -574,6 +598,26 @@ class MumbleMPD
 					@mpd.volume = volume
 				end
 				
+				if message.match(/^prev[+]+$/)
+					multi = message.match(/^prev([+]+)$/)[1].scan(/\+/).length
+					
+					while multi > 0 do
+						@mpd.previous
+						sleep(0.5)
+						multi -= 1
+					end
+				end
+				
+				if message.match(/^next[+]+$/)
+					multi = message.match(/^next([+]+)$/)[1].scan(/\+/).length
+					
+					while multi > 0 do
+						@mpd.next
+						sleep(0.5)
+						multi -= 1
+					end
+				end
+				
 				if message == 'clear'
 					@mpd.clear
 					@cli.text_user(msg.actor, "The playqueue was cleared.")
@@ -670,6 +714,8 @@ class MumbleMPD
 						@cli.text_user(msg.actor, "No song is played currently.")
 					end
 				end
+				
+				addtohistory(message, @cli.users[msg.actor].name)
 			end
 		end
 	end
