@@ -19,4 +19,6 @@ def ext_config()
 					+ "<b>Title: </b>DISABLED<br />" \
 					+ "<b>Album: </b>DISABLED<br /><br />" \
 					+ "<b>Write %shelp to me, to get a list of my commands!"
+	
+	@maxhistory = 25
 end
