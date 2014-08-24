@@ -66,7 +66,7 @@ class MumbleMPD
 		#Delete the first element and add this one to the end of the list == rotating ? :)
 		
 		if not @history.empty?
-			@history.delete(0)
+			@history.delete_at(0)
 		end
 		
 		time = Time.now
