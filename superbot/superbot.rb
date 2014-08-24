@@ -65,7 +65,7 @@ class MumbleMPD
 		#Saves the last x commands and usernames in an array for debug.
 		#Delete the first element and add this one to the end of the list == rotating ? :)
 		
-		if not @history.empty?
+		if @history.length >= @maxhistory and not @history.empty?
 			@history.delete_at(0)
 		end
 		
