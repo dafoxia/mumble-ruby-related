@@ -9,6 +9,7 @@ class MumbleMPD
 	def initialize
 		#Initialize default values
 		@history = Array.new
+		@displaysongupdates = true
 		@maxhistory = 25
 		@controlstring = "."
 		@debug = false
@@ -208,20 +209,23 @@ class MumbleMPD
 		end
 		
 		@mpd.on :song do |current|
-			if not current.nil? #Would crash if playlist was empty.
-				if @use_comment_for_status_display == true && @set_comment_available == true
-					begin
-						@cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album, @controlstring])
-					rescue NoMethodError
-						if @debug
-							puts "#{$!}"
+			
+			if @displaysongupdates == true
+				if not current.nil? #Would crash if playlist was empty.
+					if @use_comment_for_status_display == true && @set_comment_available == true
+						begin
+							@cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album, @controlstring])
+						rescue NoMethodError
+							if @debug
+								puts "#{$!}"
+							end
 						end
-					end
-				else
-					if current.artist.nil? && current.title.nil? && current.album.nil?
-						@cli.text_channel(@cli.me.current_channel, "#{current.file}")
 					else
-						@cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+						if current.artist.nil? && current.title.nil? && current.album.nil?
+							@cli.text_channel(@cli.me.current_channel, "#{current.file}")
+						else
+							@cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})")
+						end
 					end
 				end
 			end
@@ -601,7 +605,17 @@ class MumbleMPD
 				if message.match(/^prev[+]+$/)
 					multi = message.match(/^prev([+]+)$/)[1].scan(/\+/).length
 					
+					if multi >= 2
+						@displaysongupdates = false
+						#prevent spamming
+					end
+					
 					while multi > 0 do
+						if multi == 1
+							@displaysongupdates = true
+							#display last song
+						end
+						
 						@mpd.previous
 						sleep(0.5)
 						multi -= 1
@@ -611,7 +625,17 @@ class MumbleMPD
 				if message.match(/^next[+]+$/)
 					multi = message.match(/^next([+]+)$/)[1].scan(/\+/).length
 					
+					if multi >= 2
+						@displaysongupdates = false
+						#prevent spamming
+					end
+					
 					while multi > 0 do
+						if multi == 1
+							@displaysongupdates = true
+							#display last song
+						end
+											
 						@mpd.next
 						sleep(0.5)
 						multi -= 1
