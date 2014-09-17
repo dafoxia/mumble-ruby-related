@@ -41,7 +41,7 @@ class MumbleMPD
         sleep(1)
         @cli.join_channel(@mumbleserver_targetchannel)
         sleep(1)
-        @cli.stream_raw_audio(@mpd_fifopath)
+        @cli.player.stream_named_pipe(@mpd_fifopath)
 
         @mpd.connect true
 
