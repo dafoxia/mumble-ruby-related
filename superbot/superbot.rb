@@ -118,10 +118,24 @@ class MumbleMPD
 		@cli.on_text_message do |msg|
 			handle_text_message(msg)
 		end
-				
+		
+ 		@cli.on_udp_tunnel do |udp|
+            		@lastaudio = Time.now
+        	end				
+        	
 		begin
+			@lastaudio = Time.now
 			t = Thread.new do
-				$stdin.gets
+				#$stdin.gets
+				# This implements ducking Bot when others speak
+				while (true==true)
+					sleep 0.02
+					if ((Time.now - @ lastaudio) < 0.1) then
+						@cli.player.volume = 20
+					else
+						@cli.player.volume = 100
+					end
+				end
 			end
 			
 			#The following two lines prevent the bot from spamming all the current mpd settings into the chat.
