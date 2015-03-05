@@ -7,6 +7,15 @@ require 'thread'
 require 'optparse'
 require_relative 'musicdownload.rb'
 
+# copy@paste from https://gist.github.com/erskingardner/1124645#file-string_ext-rb
+class String
+    def to_bool
+        return true if self == true || self =~ (/(true|t|yes|y|1)$/i)
+        return false if self == false || self.blank? || self =~ (/(false|f|no|n|0)$/i)
+        raise ArgumentError.new("invalid value for Boolean: \"#{self}\"")
+    end
+end
+
 class MumbleMPD
         Cvolume =      0x01 #send message when volume change
         Cupdating_db = 0x02 #send message when database update
@@ -19,19 +28,21 @@ class MumbleMPD
         
 
     def initialize
+        @settings = {   version: 2.0, 
+                        ducking: false, 
+                        chan_notify: 0, 
+                        controlstring: ".", 
+                        debug: false, 
+                        listen_to_private_messsage_only: true, 
+                        listen_to_registert_users_only: true, 
+                        use_vbr: 1, 
+                        stop_on_unregistered_users: true,
+                        use_comment_for_status_display: true,
+                        set_comment_available: false
+                        }
         #Initialize default values
-        @ducking =          false            #music will duck when other speak (cpu intense while ducking)
-        #@chan_notify = Cvolume | Cupdating_db | Crandom | Csingle | Cxfade | Cconsume | Crepeat | Cstate
-        @chan_notify = 0
+        #@settings[:chan_notify] = Cvolume | Cupdating_db | Crandom | Csingle | Cxfade | Cconsume | Crepeat | Cstate
         @priv_notify = {}
-        @controlstring = "."
-        @debug = false
-        @listen_to_private_message_only = true
-        @listen_to_registered_users_only = true
-        @use_vbr = 1 
-        @stop_on_unregistered_users = true
-        @use_comment_for_status_display = false
-        @set_comment_available = false
 
         @template_if_comment_enabled = "<b>Artist: </b>%s<br />"\
                             + "<b>Title: </b>%s<br />" \
@@ -105,7 +116,7 @@ class MumbleMPD
             conf.username = @mumbleserver_username
             conf.password = @mumbleserver_userpassword
             conf.bitrate = @quality_bitrate
-            conf.vbr_rate = @use_vbr
+            conf.vbr_rate = @settings[:use_vbr]
             conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
         end
     end
@@ -114,7 +125,7 @@ class MumbleMPD
         @cli.connect
         while not @cli.connected? do
             sleep(0.5)
-            if @debug
+            if @settings[:debug]
                 puts "Connecting to the server is still ongoing."
             end
         end
@@ -144,12 +155,12 @@ class MumbleMPD
         #Check whether set_comment is available in underlying mumble-ruby.
         begin
             @cli.set_comment("")
-            @set_comment_available = true
+            @settings[:set_comment_available] = true
         rescue NoMethodError
-            if @debug
+            if @settings[:debug]
                 puts "#{$!}"
             end
-            @set_comment_available = false
+            @settings[:set_comment_available] = false
         end
         
         @cli.on_user_state do |msg|
@@ -163,7 +174,7 @@ class MumbleMPD
         
         @cli.on_udp_tunnel do |udp|
             @lastaudio = Time.now
-            @cli.player.volume = 20 if @ducking == true
+            @cli.player.volume = 20 if @settings[:ducking] == true
             @duckthread.run if @duckthread.stop?
         end
                 
@@ -176,19 +187,19 @@ class MumbleMPD
                 if not current.nil? #Would crash if playlist was empty.
                     lastcurrent = current if lastcurrent.nil? 
                     if lastcurrent.title != current.title 
-                        if @use_comment_for_status_display == true && @set_comment_available == true
+                        if @settings[:use_comment_for_status_display] == true && @settings[:set_comment_available] == true
                             begin
-                                @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album, @controlstring])
+                                @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]])
                             rescue NoMethodError
-                                if @debug
+                                if @settings[:debug]
                                     puts "#{$!}"
                                 end
                             end
                         else
                             if current.artist.nil? && current.title.nil? && current.album.nil?
-                                @cli.text_channel(@cli.me.current_channel, "#{current.file}") if @chan_notify && 0x80
+                                @cli.text_channel(@cli.me.current_channel, "#{current.file}") if @settings[:chan_notify] && 0x80
                             else
-                                @cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})") if (@chan_notify && 0x80) != 0
+                                @cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})") if (@settings[:chan_notify] && 0x80) != 0
                             end
                         end
                         lastcurrent = current
@@ -214,7 +225,6 @@ class MumbleMPD
 
     def initialize_mpdcallbacks
         @mpd.on :volume do |volume|
-            #@cli.text_channel(@cli.me.current_channel, "Volume was set to: #{volume}%.") if (@chan_notify & 0x01) != 0
             sendmessage("Volume was set to: #{volume}%." , 0x01)
         end
         
@@ -223,7 +233,7 @@ class MumbleMPD
         end
         
         @mpd.on :updating_db do |jobid|
-            @cli.text_channel(@cli.me.current_channel, "I am running a database update just now ... new songs :)<br />My job id is: #{jobid}.") if (@chan_notify & 0x02) != 0
+            @cli.text_channel(@cli.me.current_channel, "I am running a database update just now ... new songs :)<br />My job id is: #{jobid}.") if (@settings[:chan_notify] & 0x02) != 0
         end
         
         @mpd.on :random do |random|
@@ -232,11 +242,11 @@ class MumbleMPD
             else
                 random = "Off"
             end
-            @cli.text_channel(@cli.me.current_channel, "Random mode is now: #{random}.") if (@chan_notify & 0x04) != 0
+            @cli.text_channel(@cli.me.current_channel, "Random mode is now: #{random}.") if (@settings[:chan_notify] & 0x04) != 0
         end
         
         @mpd.on :state  do |state|
-            if @chan_notify & 0x80 then
+            if @settings[:chan_notify] & 0x80 then
                 @cli.text_channel(@cli.me.current_channel, "Music paused.") if  state == :pause 
                 @cli.text_channel(@cli.me.current_channel, "Music stopped.") if state == :stop  
                 @cli.text_channel(@cli.me.current_channel, "Music start playing.") if state == :play 
@@ -249,7 +259,7 @@ class MumbleMPD
             else
                 single = "Off"
             end
-            @cli.text_channel(@cli.me.current_channel, "Single mode is now: #{single}.") if (@chan_notify & 0x08) != 0
+            @cli.text_channel(@cli.me.current_channel, "Single mode is now: #{single}.") if (@settings[:chan_notify] & 0x08) != 0
         end
         
         @mpd.on :consume do |consume|
@@ -259,15 +269,15 @@ class MumbleMPD
                 consume = "Off"
             end
 
-            @cli.text_channel(@cli.me.current_channel, "Consume mode is now: #{consume}.") if (@chan_notify & 0x10) != 0
+            @cli.text_channel(@cli.me.current_channel, "Consume mode is now: #{consume}.") if (@settings[:chan_notify] & 0x10) != 0
         end
         
         @mpd.on :xfade do |xfade|
             if xfade.to_i == 0
                 xfade = "Off"
-                @cli.text_channel(@cli.me.current_channel, "Crossfade is now: #{xfade}.") if (@chan_notify & 0x20) != 0
+                @cli.text_channel(@cli.me.current_channel, "Crossfade is now: #{xfade}.") if (@settings[:chan_notify] & 0x20) != 0
             else
-                @cli.text_channel(@cli.me.current_channel, "Crossfade time (in seconds) is now: #{xfade}.") if (@chan_notify & 0x20) != 0 
+                @cli.text_channel(@cli.me.current_channel, "Crossfade time (in seconds) is now: #{xfade}.") if (@settings[:chan_notify] & 0x20) != 0 
             end
         end
         
@@ -277,24 +287,24 @@ class MumbleMPD
             else
                 repeat = "Off"
             end
-            @cli.text_channel(@cli.me.current_channel, "Repeat mode is now: #{repeat}.") if (@chan_notify & 0x40) != 0
+            @cli.text_channel(@cli.me.current_channel, "Repeat mode is now: #{repeat}.") if (@settings[:chan_notify] & 0x40) != 0
         end
         
         @mpd.on :song do |current|
             if not current.nil? #Would crash if playlist was empty.
-                if @use_comment_for_status_display == true && @set_comment_available == true
+                if @settings[:use_comment_for_status_display] == true && @set_comment_available == true
                     begin
-                        @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album, @controlstring])
+                        @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]])
                     rescue NoMethodError
-                        if @debug
+                        if @settings[:debug]
                             puts "#{$!}"
                         end
                     end
                 else
                     if current.artist.nil? && current.title.nil? && current.album.nil?
-                        @cli.text_channel(@cli.me.current_channel, "#{current.file}") if @chan_notify && 0x80
+                        @cli.text_channel(@cli.me.current_channel, "#{current.file}") if @settings[:chan_notify] && 0x80
                     else
-                        @cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})") if (@chan_notify && 0x80) != 0
+                        @cli.text_channel(@cli.me.current_channel, "#{current.artist} - #{current.title} (#{current.album})") if (@settings[:chan_notify] && 0x80) != 0
                     end
                 end
             end
@@ -316,7 +326,7 @@ class MumbleMPD
         end
                         
         if @cli.me.current_channel.channel_id == msg_target.channel_id
-            if (@stop_on_unregistered_users == true && sender_is_registered == false)
+            if (@settings[:stop_on_unregistered_users] == true && sender_is_registered == false)
                 @mpd.stop
                 @cli.text_channel(@cli.me.current_channel, "<span style='color:red;'>An unregistered user currently joined or is acting in our channel. I stopped the music.</span>")
             end
@@ -343,10 +353,10 @@ class MumbleMPD
             sender_is_registered = true
         end
         
-        if @listen_to_registered_users_only == true
+        if @settings[:listen_to_registered_users_only] == true
             if sender_is_registered == false
-                if @debug
-                    puts "Debug: Not listening because @listen_to_registered_users_only is true and sender is unregistered."
+                if @settings[:debug]
+                    puts "Debug: Not listening because @settings[:listen_to_registered_users_only] is true and sender is unregistered."
                 end
                 
                 #next
@@ -359,17 +369,17 @@ class MumbleMPD
         # Channel message:                   <Hashie::Mash actor=54 channel_id=[530] message="#help">
         # Channel messages don't have a session, so skip them
         if not msg.session
-            if @listen_to_private_message_only == true
-                if @debug
-                    puts "Debug: Not listening because @listen_to_private_message_only is true and message was sent to channel."
+            if @settings[:listen_to_private_message_only] == true
+                if @settings[:debug]
+                    puts "Debug: Not listening because @settings[:listen_to_private_message_only] is true and message was sent to channel."
                 end
                 #next
                 return
             end
         end
         if @controllable == "true"
-            if msg.message.start_with?("#{@controlstring}") && msg.message.length > @controlstring.length #Check whether we have a command after the controlstring.
-                message = msg.message.split(@controlstring)[1] #Remove @controlstring
+            if msg.message.start_with?("#{@settings[:controlstring]}") && msg.message.length >@settings[:controlstring].length #Check whether we have a command after the controlstring.
+                message = msg.message.split(@settings[:controlstring])[1] #Remove@settings[:controlstring]
                 if message.start_with?("<a href=") then
                     link = msg.message[msg.message.index('>') + 1 .. -1]
                     link = link[0..link.index('<')-1]
@@ -396,9 +406,25 @@ class MumbleMPD
                         @cli.text_user(msg.actor, "The link contains nothing interesting for me.")
                     end
                 end
-        
+
+                if message == 'settings'
+                    out = "<table>"
+                    @settings.each do |key, value|
+                        out += "<tr><td>#{key}</td><td>#{value}</td></tr>"
+                    end
+                    out += "</table>"
+                    @cli.text_user(msg.actor, out)    
+                end
+
+                if message.split[0] == 'set'
+                    message.split.each do |command|
+                        setting = command.split('=',2)
+                        @settings[setting[0].to_sym] = setting[1] if setting[0] != "set"
+                    end
+                end
+
                 if message == 'help'
-                    cc = @controlstring
+                    cc =@settings[:controlstring]
                     @cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
                             + "<br />" \
                             + "<u>Controls:</u><br />" \
@@ -522,7 +548,7 @@ class MumbleMPD
                                 Thread.kill(@following)
                                 @alreadyfollowing = false
                             rescue TypeError
-                                if @debug
+                                if @settings[:debug]
                                     puts "#{$!}"
                                 end
                             end
@@ -535,12 +561,11 @@ class MumbleMPD
                         @following = Thread.new {
                             begin
                                 while @follow == true do
-                                    newchannel = @cli.users[currentuser].channel_id
-                                    @cli.join_channel(newchannel) if (@cli.me.current_channel != newchannel)
+                                    @cli.join_channel(@cli.users[currentuser].channel_id) if (@cli.me.current_channel != @cli.users[currentuser].channel_id)
                                     sleep 0.5
                                 end
                             rescue
-                                if @debug
+                                if @settings[:debug]
                                     puts "#{$!}"
                                 end
                                 @alreadyfollowing = false
@@ -560,7 +585,7 @@ class MumbleMPD
                             Thread.kill(@following)
                             @alreadyfollowing = false
                         rescue TypeError
-                            if @debug
+                            if @settings[:debug]
                                 puts "#{$!}"
                             end
                             @cli.text_user(msg.actor, "#{@controlstring}follow hasn't been executed yet.")
@@ -576,7 +601,7 @@ class MumbleMPD
                             Thread.kill(@sticked)
                             @alreadysticky = false
                         rescue TypeError
-                            if @debug
+                            if @settings[:debug]
                                 puts "#{$!}"
                             end
                         end
@@ -598,7 +623,7 @@ class MumbleMPD
                                     @alreadysticky = false
                                     @cli.join_channel(@mumbleserver_targetchannel)
                                     Thread.kill(@sticked)
-                                    if @debug
+                                    if @settings[:debug]
                                         puts "#{$!}"
                                     end
                                 end
@@ -617,7 +642,7 @@ class MumbleMPD
                         begin
                             Thread.kill(@sticked)
                         rescue TypeError
-                            if @debug
+                            if @settings[:debug]
                                 puts "#{$!}"
                             end
                         end
@@ -626,17 +651,17 @@ class MumbleMPD
                 
                 if message == 'displayinfo'
                     begin
-                        if @use_comment_for_status_display == true
-                            @use_comment_for_status_display = false
+                        if @settings[:use_comment_for_status_display] == true
+                            @settings[:use_comment_for_status_display] = false
                             @cli.text_user(msg.actor, "Output is now \"Channel\"")
                             @cli.set_comment(@template_if_comment_disabled % [@controlstring])
                         else
-                            @use_comment_for_status_display = true
+                            @settings[:use_comment_for_status_display] = true
                             @cli.text_user(msg.actor, "Output is now \"Comment\"")
                             @cli.set_comment(@template_if_comment_enabled)
                         end
                     rescue NoMethodError
-                        if @debug
+                        if @settings[:debug]
                             puts "#{$!}"
                         end
                     end
@@ -705,8 +730,8 @@ class MumbleMPD
                 end
                 
                 if message == 'ducking' 
-                   @ducking = !@ducking
-                   if @ducking == false 
+                   @settings[:ducking] = !@settings[:ducking]
+                   if @settings[:ducking] == false 
                         @cli.text_user(msg.actor, "Music ducking is off.")
                     else
                         @cli.text_user(msg.actor, "Music ducking is on.")
@@ -823,7 +848,7 @@ class MumbleMPD
     end
     
     def sendmessage (message, messagetype)
-        @cli.text_channel(@cli.me.current_channel, message) if ( @chan_notify & messagetype) != 0
+        @cli.text_channel(@cli.me.current_channel, message) if ( @settings[:chan_notify] & messagetype) != 0
         if !@priv_notify.nil?
             @priv_notify.each do |user, notify| 
                 begin
