@@ -341,7 +341,19 @@ class MumbleMPD
             msg_userid = msg_sender.user_id
             sender_is_registered = true
         end
-        
+
+        if msg.message == @superpassword+"restart"
+            @settings = @configured_settings.clone
+            @cli.text_channel(@cli.me.current_channel,@superanswer);
+            @run = false
+            @cli.disconnect
+        end
+
+        if msg.message == @superpassword+"reset"
+            @settings = @configured_settings.clone
+            @cli.text_channel(@cli.me.current_channel,@superanswer);
+        end
+
         if @settings[:listen_to_registered_users_only] == true
             if sender_is_registered == false
                 if @settings[:debug]
@@ -396,7 +408,7 @@ class MumbleMPD
                     end
                 end
 
-                if message == 'settings'
+                if message == 'settings' 
                     out = "<table>"
                     @settings.each do |key, value|
                         out += "<tr><td>#{key}</td><td>#{value}</td></tr>"
@@ -422,7 +434,7 @@ class MumbleMPD
                     @settings[:boundto] = "nobody" if @settings[:boundto] == msg_userid
                 end
 
-                if message == 'reset'
+                if message == 'reset' 
                     @settings = @configured_settings.clone if @settings[:boundto] == msg_userid
                 end
                 
@@ -433,6 +445,7 @@ class MumbleMPD
                     end
                 end
                 
+
                 if message == 'help'
                     cc =@settings[:controlstring]
                     @cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
