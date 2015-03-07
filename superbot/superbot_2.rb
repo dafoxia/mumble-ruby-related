@@ -17,6 +17,7 @@ class String
 end
 
 class MumbleMPD
+        attr_reader :run
         Cvolume =      0x01 #send message when volume change
         Cupdating_db = 0x02 #send message when database update
         Crandom =      0x04 #send message when random mode changed
@@ -28,18 +29,7 @@ class MumbleMPD
         
 
     def initialize
-        @settings = {   version: 2.0, 
-                        ducking: false, 
-                        chan_notify: 0, 
-                        controlstring: ".", 
-                        debug: false, 
-                        listen_to_private_messsage_only: true, 
-                        listen_to_registert_users_only: true, 
-                        use_vbr: 1, 
-                        stop_on_unregistered_users: true,
-                        use_comment_for_status_display: true,
-                        set_comment_available: false
-                        }
+
         #Initialize default values
         #@settings[:chan_notify] = Cvolume | Cupdating_db | Crandom | Csingle | Cxfade | Cconsume | Crepeat | Cstate
         @priv_notify = {}
@@ -66,78 +56,87 @@ class MumbleMPD
             opts.banner = "Usage: superbot_2.rb [options]"
             
             opts.on("--mumblehost=", "IP or Hostname of mumbleserver") do |v|
-                @mumbleserver_host = v
+                @settings[:mumbleserver_host] = v
             end
             
             opts.on("--mumbleport=", "Port of Mumbleserver") do |v|
-                @mumbleserver_port = v
+                @settings[:mumbleserver_port] = v
             end
             
             opts.on("--name=", "The Bot's Nickname") do |v|
-                @mumbleserver_username = v
+                @settings[:mumbleserver_username] = v
             end
             
             opts.on("--userpass=", "Password if required for user") do |v|
-                @mumbleserver_userpassword = v
+                @settings[:mumbleserver_userpassword] = v
             end
             
             opts.on("--targetchannel=", "Channel to be joined after connect") do |v|
-                @mumbleserver_targetchannel = v
+                @settings[:mumbleserver_targetchannel] = v
             end
             
             opts.on("--bitrate=", "Desired audio bitrate") do |v|
-                @quality_bitrate = v.to_i
+                @settings[:quality_bitrate] = v.to_i
             end
             
             opts.on("--fifo=", "Path to fifo") do |v|
-                @mpd_fifopath = v.to_s
+                @settings[:mpd_fifopath] = v.to_s
             end
             
             opts.on("--mpdhost=", "MPD's Hostname") do |v|
-                @mpd_host = v
+                @settings[:mpd_host] = v
             end
             
             opts.on("--mpdport=", "MPD's Port") do |v|
-                @mpd_port = v.to_i
+                @settings[:mpd_port] = v.to_i
             end
             
             opts.on("--controllable=", "true if bot should be controlled from chatcommands") do |v|
-                @controllable = v.to_s
+                @settings[:controllable] = v.to_bool
             end
             
             opts.on("--certdir=", "path to cert") do |v|
-                @certdirectory = v
+                @settings[:certdirectory] = v
             end
         end.parse! 
+        @configured_settings = @settings.clone 
+    end
+    
+    def init_settings
+        @mpd = nil
+        @cli = nil
 
-        @mpd = MPD.new @mpd_host, @mpd_port
+        @mpd = MPD.new @settings[:mpd_host], @settings[:mpd_port].to_i
 
-        @cli = Mumble::Client.new(@mumbleserver_host, @mumbleserver_port) do |conf|
-            conf.username = @mumbleserver_username
-            conf.password = @mumbleserver_userpassword
-            conf.bitrate = @quality_bitrate
+        @cli = Mumble::Client.new(@settings[:mumbleserver_host], @settings[:mumbleserver_port]) do |conf|
+            conf.username = @settings[:mumbleserver_username]
+            conf.password = @settings[:mumbleserver_userpassword]
+            conf.bitrate = @settings[:quality_bitrate].to_i
             conf.vbr_rate = @settings[:use_vbr]
-            conf.ssl_cert_opts[:cert_dir] = File.expand_path(@certdirectory)
+            conf.ssl_cert_opts[:cert_dir] = File.expand_path(@settings[:certdirectory])
         end
     end
     
-    def start
+    def mumble_start
+
         @cli.connect
-        while not @cli.connected? do
+         while not @cli.connected? do
             sleep(0.5)
-            if @settings[:debug]
-                puts "Connecting to the server is still ongoing."
-            end
+            puts "Connecting to the server is still ongoing." if @settings[:debug]
         end
         begin
-            @cli.join_channel(@mumbleserver_targetchannel)
+            @cli.join_channel(@settings[:mumbleserver_targetchannel])
         rescue
-            puts "#{$!}"
-            puts "Can't join #{@mumbleserver_targetchannel}!"
+            puts "[joincannel]#{$1} Can't join #{@settings[:mumbleserver_targetchannel]}!" if @settings[:debug]
         end
-        @cli.player.stream_named_pipe(@mpd_fifopath)
-        @mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
+
+        begin
+            Thread.kill(@duckthread)
+        rescue
+            puts "[killduckthread] can't kill because #{$1}" if @settings[:debug]
+        end
         
+        #Start duckthread
         @duckthread = Thread.new do
             while (true == true)
                 while (@cli.player.volume != 100)
@@ -152,15 +151,13 @@ class MumbleMPD
             end
         end
         
-        #Check whether set_comment is available in underlying mumble-ruby.
+
         begin
             @cli.set_comment("")
             @settings[:set_comment_available] = true
         rescue NoMethodError
-            if @settings[:debug]
-                puts "#{$!}"
-            end
-            @settings[:set_comment_available] = false
+            puts "[displaycomment]#{$!}" if @settings[:debug]
+            @settings[:set_comment_available] = false 
         end
         
         @cli.on_user_state do |msg|
@@ -179,11 +176,12 @@ class MumbleMPD
         end
                 
         @lastaudio = Time.now
-
+        
+        @run = true
         main = Thread.new do
-            while (true == true)
+            while (@run == true)
                 sleep 1
-                current = @mpd.current_song
+                current = @mpd.current_song if @mpd.connected?
                 if not current.nil? #Would crash if playlist was empty.
                     lastcurrent = current if lastcurrent.nil? 
                     if lastcurrent.title != current.title 
@@ -203,26 +201,17 @@ class MumbleMPD
                             end
                         end
                         lastcurrent = current
-                        puts "update"
+                        puts "[displayinfo] update" if @settings[:debug]
                     end
                 end
             end
         end
-        
-        update_note = Thread.new do
-            
-        end
-            
-        #The following two lines prevent the bot from spamming all the current mpd settings into the chat.
-        sleep(3)
         initialize_mpdcallbacks
-            
-        begin
-            main.join
-        rescue Interrupt => e
-        end
-    end
+        @cli.player.stream_named_pipe(@settings[:mpd_fifopath]) 
+        @mpd.connect true #without true bot does not @cli.text_channel messages other than for !status
 
+    end
+    
     def initialize_mpdcallbacks
         @mpd.on :volume do |volume|
             sendmessage("Volume was set to: #{volume}%." , 0x01)
@@ -246,7 +235,7 @@ class MumbleMPD
         end
         
         @mpd.on :state  do |state|
-            if @settings[:chan_notify] & 0x80 then
+            if @settings[:chan_notify] & 0x80 != 0 then
                 @cli.text_channel(@cli.me.current_channel, "Music paused.") if  state == :pause 
                 @cli.text_channel(@cli.me.current_channel, "Music stopped.") if state == :stop  
                 @cli.text_channel(@cli.me.current_channel, "Music start playing.") if state == :play 
@@ -292,7 +281,7 @@ class MumbleMPD
         
         @mpd.on :song do |current|
             if not current.nil? #Would crash if playlist was empty.
-                if @settings[:use_comment_for_status_display] == true && @set_comment_available == true
+                if @settings[:use_comment_for_status_display] == true && @settings[:set_comment_available] == true
                     begin
                         @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]])
                     rescue NoMethodError
@@ -377,7 +366,7 @@ class MumbleMPD
                 return
             end
         end
-        if @controllable == "true"
+        if @settings[:controllable] == true
             if msg.message.start_with?("#{@settings[:controlstring]}") && msg.message.length >@settings[:controlstring].length #Check whether we have a command after the controlstring.
                 message = msg.message.split(@settings[:controlstring])[1] #Remove@settings[:controlstring]
                 if message.start_with?("<a href=") then
@@ -416,13 +405,34 @@ class MumbleMPD
                     @cli.text_user(msg.actor, out)    
                 end
 
-                if message.split[0] == 'set'
-                    message.split.each do |command|
-                        setting = command.split('=',2)
-                        @settings[setting[0].to_sym] = setting[1] if setting[0] != "set"
+                if message.split[0] == 'set' 
+                    if !@settings[:need_binding] || @settings[:boundto]==msg_userid
+                        message.split.each do |command|
+                            setting = command.split('=',2)
+                            @settings[setting[0].to_sym] = setting[1] if setting[0] != "set"
+                        end
                     end
                 end
+                
+                if message == 'bind'
+                    @settings[:boundto] = msg_userid if @settings[:boundto] == "nobody"
+                end        
+                
+                if message == 'unbind'
+                    @settings[:boundto] = "nobody" if @settings[:boundto] == msg_userid
+                end
 
+                if message == 'reset'
+                    @settings = @configured_settings.clone if @settings[:boundto] == msg_userid
+                end
+                
+                if message == 'restart'
+                    if @settings[:boundto] == msg_userid
+                        @run=false
+                        @cli.disconnect
+                    end
+                end
+                
                 if message == 'help'
                     cc =@settings[:controlstring]
                     @cli.text_user(msg.actor, "<br /><u><b>I know the following commands:</u></b><br />" \
@@ -524,7 +534,7 @@ class MumbleMPD
                 end
                 
                 if message == 'gotobed'
-                    @cli.join_channel(@mumbleserver_targetchannel)
+                    @cli.join_channel(@settings[:mumbleserver_targetchannel])
                     @mpd.pause = true
                     @cli.me.deafen true
                     begin
@@ -621,7 +631,7 @@ class MumbleMPD
                                     sleep(1)
                                 rescue
                                     @alreadysticky = false
-                                    @cli.join_channel(@mumbleserver_targetchannel)
+                                    @cli.join_channel(@settings[:mumbleserver_targetchannel])
                                     Thread.kill(@sticked)
                                     if @settings[:debug]
                                         puts "#{$!}"
@@ -863,5 +873,13 @@ end
 
 puts "Superbot_2 is starting..." 
 client = MumbleMPD.new
-client.start    
+while true == true
+    client.init_settings
+    client.mumble_start    
+    sleep 3
+    while client.run == true
+        sleep 0.5
+    end
+    sleep 0.5
+end
 
