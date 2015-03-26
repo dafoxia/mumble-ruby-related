@@ -342,13 +342,13 @@ class MumbleMPD
             sender_is_registered = true
         end
 
-		# generating help message.
-		# each command adds his own help
-		help ="<br />"	# start with empty help
-		# the help command should be the last command in this function
-		cc = @settings[:controlstring]
-		
-		help += "<b>superpassword+restart</b> will restart the bot.<br />"
+        # generating help message.
+        # each command adds his own help
+        help ="<br />"    # start with empty help
+        # the help command should be the last command in this function
+        cc = @settings[:controlstring]
+        
+        help += "<b>superpassword+restart</b> will restart the bot.<br />"
         if msg.message == @superpassword+"restart"
             @settings = @configured_settings.clone
             @cli.text_channel(@cli.me.current_channel,@superanswer);
@@ -356,7 +356,7 @@ class MumbleMPD
             @cli.disconnect
         end
 
-		help += "<b>superpassword+reset</b> will reset variables to start values.<br />"
+        help += "<b>superpassword+reset</b> will reset variables to start values.<br />"
         if msg.message == @superpassword+"reset"
             @settings = @configured_settings.clone
             @cli.text_channel(@cli.me.current_channel,@superanswer);
@@ -390,8 +390,8 @@ class MumbleMPD
             if msg.message.start_with?("#{@settings[:controlstring]}") && msg.message.length >@settings[:controlstring].length #Check whether we have a command after the controlstring.
                 message = msg.message.split(@settings[:controlstring])[1] #Remove@settings[:controlstring]
 
-        		help += "<b>#{cc}http-link</b> will try to get some music from link.<br />"
-				if message.start_with?("<a href=") then
+                help += "<b>#{cc}http-link</b> will try to get some music from link.<br />"
+                if message.start_with?("<a href=") then
                     link = msg.message[msg.message.index('>') + 1 .. -1]
                     link = link[0..link.index('<')-1]
                     @cli.text_user(msg.actor, "inspecting link: " + link + "...")
@@ -401,15 +401,15 @@ class MumbleMPD
                     if ( md.songs > 0 ) then
                         @mpd.update("download") 
                         @cli.text_user(msg.actor, "Waiting for database update complete...")
-						
-						#Caution! following command needs patched ruby-mpd!
+                        
+                        #Caution! following command needs patched ruby-mpd!
                         @mpd.idle("update")
-						# find this lines in ruby-mpd/plugins/information.rb (actual 47-49)
-						# def idle(*masks)
-						#  send_command(:idle, *masks)
-						# end
-						# and uncomment it there, then build gem new.
-							
+                        # find this lines in ruby-mpd/plugins/information.rb (actual 47-49)
+                        # def idle(*masks)
+                        #  send_command(:idle, *masks)
+                        # end
+                        # and uncomment it there, then build gem new.
+                            
                         @cli.text_user(msg.actor, "Update done.")
                         playlist = MPD::Playlist.new(@mpd,'youtube')
                         while md.songs > 0 
@@ -426,7 +426,7 @@ class MumbleMPD
                     end
                 end
 
-        		help += "<b>#{cc}settings</b> display current settings.<br />"
+                help += "<b>#{cc}settings</b> display current settings.<br />"
                 if message == 'settings' 
                     out = "<table>"
                     @settings.each do |key, value|
@@ -436,7 +436,7 @@ class MumbleMPD
                     @cli.text_user(msg.actor, out)    
                 end
 
-        		help += "<b>#{cc}set <i>variable=value</i></b> Set variable to value.<br />"
+                help += "<b>#{cc}set <i>variable=value</i></b> Set variable to value.<br />"
                 if message.split[0] == 'set' 
                     if !@settings[:need_binding] || @settings[:boundto]==msg_userid
                         message.split.each do |command|
@@ -446,22 +446,22 @@ class MumbleMPD
                     end
                 end
                 
-           		help += "<b>#{cc}bind</b> Bind Bot to a user. (some functions will only do if bot is bound).<br />"
-				if message == 'bind'
+                   help += "<b>#{cc}bind</b> Bind Bot to a user. (some functions will only do if bot is bound).<br />"
+                if message == 'bind'
                     @settings[:boundto] = msg_userid if @settings[:boundto] == "nobody"
                 end        
                 
-        		help += "<b>#{cc}unbind</b> Unbind Bot.<br />"
+                help += "<b>#{cc}unbind</b> Unbind Bot.<br />"
                 if message == 'unbind'
                     @settings[:boundto] = "nobody" if @settings[:boundto] == msg_userid
                 end
                 
-        		help += "<b>#{cc}reset</b> Reset variables to default value. Needs binding!<br />"
-				if message == 'reset' 
+                help += "<b>#{cc}reset</b> Reset variables to default value. Needs binding!<br />"
+                if message == 'reset' 
                     @settings = @configured_settings.clone if @settings[:boundto] == msg_userid
                 end
                 
-        		help += "<b>#{cc}restart</b> Restart Bot. Needs binding.<br />"
+                help += "<b>#{cc}restart</b> Restart Bot. Needs binding.<br />"
                 if message == 'restart'
                     if @settings[:boundto] == msg_userid
                         @run=false
@@ -469,7 +469,7 @@ class MumbleMPD
                     end
                 end
             
-        		help += "<b>#{cc}seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />"
+                help += "<b>#{cc}seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />"
                 if message.match(/^seek [+-]?[0-9]{1,3}$/)
                     seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
                     @mpd.seek seekto
@@ -487,13 +487,13 @@ class MumbleMPD
                     @cli.text_channel(@cli.me.current_channel, "Seeked to position #{now}/#{total}.")
                 end
                 
-				help += "<b>#{cc}crossfade <i>value</i></b> Set Crossfade to value seconds, 0 to disable this.<br />"
+                help += "<b>#{cc}crossfade <i>value</i></b> Set Crossfade to value seconds, 0 to disable this.<br />"
                 if message.match(/^crossfade [0-9]{1,3}$/)
                     secs = message.match(/^crossfade ([0-9]{1,3})$/)[1].to_i
                     @mpd.crossfade = secs
                 end
                 
-				help += "<b>#{cc}ch</b> Bot jump in your channel.<br />"
+                help += "<b>#{cc}ch</b> Bot jump in your channel.<br />"
                 if message == 'ch'
                     channeluserisin = msg_sender.channel_id
 
@@ -505,22 +505,22 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}debug</b> Probe command.<br />"
+                help += "<b>#{cc}debug</b> Probe command.<br />"
                 if message == 'debug'
                     @cli.text_user(msg.actor, "<span style='color:red;font-size:30px;'>Stay out of here :)</span>")
                 end
                 
-				help += "<b>#{cc}next</b> Play next title.<br />"
+                help += "<b>#{cc}next</b> Play next title.<br />"
                 if message == 'next'
                     @mpd.next
                 end
                 
-				help += "<b>#{cc}prev</b> Play previous title.<br />"
+                help += "<b>#{cc}prev</b> Play previous title.<br />"
                 if message == 'prev'
                     @mpd.previous
                 end
                 
-				help += "<b>#{cc}gotobed</b> Bot sleeps in less then 1 second :).<br />"
+                help += "<b>#{cc}gotobed</b> Bot sleeps in less then 1 second :).<br />"
                 if message == 'gotobed'
                     @cli.join_channel(@settings[:mumbleserver_targetchannel])
                     @mpd.pause = true
@@ -532,14 +532,14 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}wakeup</b> Bot is under adrenalin again.<br />"
+                help += "<b>#{cc}wakeup</b> Bot is under adrenalin again.<br />"
                 if message == 'wakeup'
                     @mpd.pause = false
                     @cli.me.deafen false
                     @cli.me.mute false
                 end
                 
-				help += "<b>#{cc}follow</b> Bot will follow you.<br />"
+                help += "<b>#{cc}follow</b> Bot will follow you.<br />"
                 if message == 'follow'
                         if @alreadyfollowing == true
                             @cli.text_user(msg.actor, "I am already following someone! But from now on I will follow you, master.")
@@ -574,7 +574,7 @@ class MumbleMPD
                         }
                 end
                 
-				help += "<b>#{cc}unfollow</b> Bot transforms from a dog into a lazy cat :).<br />"
+                help += "<b>#{cc}unfollow</b> Bot transforms from a dog into a lazy cat :).<br />"
                 if message == 'unfollow'
                     if @follow == false
                         @cli.text_user(msg.actor, "I am not following anyone.")
@@ -594,7 +594,7 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}stick</b> Jail Bot into channel.<br />"
+                help += "<b>#{cc}stick</b> Jail Bot into channel.<br />"
                 if message == 'stick'
                     if @alreadysticky == true
                         @cli.text_user(msg.actor, "I'm already sticked! Resetting...")
@@ -634,7 +634,7 @@ class MumbleMPD
                     }
                 end
                 
-				help += "<b>#{cc}unstick</b> Free Bot.<br />"
+                help += "<b>#{cc}unstick</b> Free Bot.<br />"
                 if message == 'unstick'
                     if @sticky == false
                         @cli.text_user(msg.actor, "I am currently not sticked to a channel.")
@@ -652,7 +652,7 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}displayinfo</b> Toggles Infodisplay from comment to message and back.<br />"
+                help += "<b>#{cc}displayinfo</b> Toggles Infodisplay from comment to message and back.<br />"
                 if message == 'displayinfo'
                     begin
                         if @settings[:use_comment_for_status_display] == true
@@ -671,13 +671,13 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}v</b> Info about current playback volume.<br />"
+                help += "<b>#{cc}v</b> Info about current playback volume.<br />"
                 if message == 'v'
                     volume = @mpd.volume
                     @cli.text_user(msg.actor, "Current volume is #{volume}%.")
                 end    
                 
-				help += "<b>#{cc}v <i>value</i></b> Set playback volume to value.<br />"
+                help += "<b>#{cc}v <i>value</i></b> Set playback volume to value.<br />"
                 if message.match(/^v [0-9]{1,3}$/)
                     volume = message.match(/^v ([0-9]{1,3})$/)[1].to_i
                     
@@ -688,8 +688,8 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}v++++</b> turns volume 20% up.<br />"
-				help += "<b>#{cc}v-</b> turns volume 5% down.<br />"
+                help += "<b>#{cc}v++++</b> turns volume 20% up.<br />"
+                help += "<b>#{cc}v-</b> turns volume 5% down.<br />"
                 if message.match(/^v[-]+$/)
                     multi = message.match(/^v([-]+)$/)[1].scan(/\-/).length
                     volume = ((@mpd.volume).to_i - 5 * multi)
@@ -701,38 +701,38 @@ class MumbleMPD
                     @mpd.volume = volume
                 end
                 
-				help += "<b>#{cc}clear</b> Clear playqueue.<br />"
+                help += "<b>#{cc}clear</b> Clear playqueue.<br />"
                 if message == 'clear'
                     @mpd.clear
                     @cli.text_user(msg.actor, "The playqueue was cleared.")
                 end
                 
-				help += "<b>#{cc}random</b> toggle random mode.<br />"
+                help += "<b>#{cc}random</b> toggle random mode.<br />"
                 if message == 'random'
                     @mpd.random = !@mpd.random?
                 end
                 
-				help += "<b>#{cc}repeat</b> toggle repeat mode.<br />"
+                help += "<b>#{cc}repeat</b> toggle repeat mode.<br />"
                 if message == 'repeat'
                     @mpd.repeat = !@mpd.repeat?
                 end
                 
-				help += "<b>#{cc}single</b> toggle single mode.<br />"
+                help += "<b>#{cc}single</b> toggle single mode.<br />"
                 if message == 'single'
                     @mpd.single = !@mpd.single?
                 end
                 
-				help += "<b>#{cc}consume</b> toggle consume mode.<br />"
+                help += "<b>#{cc}consume</b> toggle consume mode.<br />"
                 if message == 'consume'
                     @mpd.consume = !@mpd.consume?
                 end
                     
-				help += "<b>#{cc}pp</b> toggle pause/play.<br />"
+                help += "<b>#{cc}pp</b> toggle pause/play.<br />"
                 if message == 'pp'
                     @mpd.pause = !@mpd.paused?
                 end
                 
-				help += "<b>#{cc}ducking</b> toggle voice ducking on/off.<br />"
+                help += "<b>#{cc}ducking</b> toggle voice ducking on/off.<br />"
                 if message == 'ducking' 
                    @settings[:ducking] = !@settings[:ducking]
                    if @settings[:ducking] == false 
@@ -742,35 +742,35 @@ class MumbleMPD
                     end
                 end
                 
-				help += "<b>#{cc}stop</b> Stop playing.<br />"
+                help += "<b>#{cc}stop</b> Stop playing.<br />"
                 if message == 'stop'
                     @mpd.stop
                 end
                 
-				help += "<b>#{cc}play</b> Start playing.<br />"
+                help += "<b>#{cc}play</b> Start playing.<br />"
                 if message == 'play'
                     @mpd.play
                     @cli.me.deafen false
                     @cli.me.mute false
                 end
                 
-				help += "<b>#{cc}songlist</b> Display songlist.<br />"
+                help += "<b>#{cc}songlist</b> Display songlist.<br />"
                 if message == 'songlist'
-					block = 0
-					out = ""
+                    block = 0
+                    out = ""
                     @mpd.songs.each do |song|
-						if block >= 50
-							@cli.text_user(msg.actor, out)
-							out = ""
-							block = 0
-						end
+                        if block >= 50
+                            @cli.text_user(msg.actor, out)
+                            out = ""
+                            block = 0
+                        end
                         out += "<br/>" + song.file
-						block += 1
+                        block += 1
                     end
                     @cli.text_user(msg.actor, out)    
                 end
                 
-				help += "<b>#{cc}stats</b> Display player stats.<br />"
+                help += "<b>#{cc}stats</b> Display player stats.<br />"
                 if message == 'stats'
                     out = "<table>"
                     @mpd.stats.each do |key, value|
@@ -781,7 +781,7 @@ class MumbleMPD
                 end
                 
                 help += "<b>#{cc}playlists</b> Display playlists.<br />"
-				if message == 'playlists'
+                if message == 'playlists'
                     text_out = ""
                     counter = 0
                     @mpd.playlists.each do |playlist|
@@ -792,7 +792,7 @@ class MumbleMPD
                     @cli.text_user(msg.actor, "I know the following playlists:<br />#{text_out}")
                 end
                 
-				help += "<b>#{cc}playlist <i>value</i></b> load playlist.<br />"
+                help += "<b>#{cc}playlist <i>value</i></b> load playlist.<br />"
                 if message.match(/^playlist [0-9]{1,3}.*$/)
                     playlist_id = message.match(/^playlist ([0-9]{1,3})$/)[1].to_i
                     
@@ -807,7 +807,7 @@ class MumbleMPD
                     end
                 end
 
-				help += "<b>#{cc}status</b> Display current status.<br />"
+                help += "<b>#{cc}status</b> Display current status.<br />"
                 if message == 'status' 
                     out = "<table>"
                     @mpd.status.each do |key, value|
@@ -817,13 +817,13 @@ class MumbleMPD
                     @cli.text_user(msg.actor, out)    
                 end
                 
-				help += "<b>#{cc}file</b> Display filename.<br />"
+                help += "<b>#{cc}file</b> Display filename.<br />"
                 if message == 'file'
                     current = @mpd.current_song
                     @cli.text_user(msg.actor, "Filename of currently played song:<br />#{current.file}</span>") if not current.nil?
                 end
                 
-				help += "<b>#{cc}song</b> Display songname.<br />"
+                help += "<b>#{cc}song</b> Display songname.<br />"
                 if message == 'song'
                     current = @mpd.current_song
                     if not current.nil? #Would crash if playlist was empty.
@@ -873,7 +873,7 @@ class MumbleMPD
                     @cli.text_user(msg.actor, send)
                 end
 
-				help += "<b>#{cc}help</b> Get this list :).<br />"
+                help += "<b>#{cc}help</b> Get this list :).<br />"
                 if message == 'help'
                     @cli.text_user(msg.actor, help)
                 end
