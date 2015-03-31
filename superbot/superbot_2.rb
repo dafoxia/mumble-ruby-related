@@ -396,6 +396,8 @@ class MumbleMPD
                     link = link[0..link.index('<')-1]
                     @cli.text_user(msg.actor, "inspecting link: " + link + "...")
                     md = MusicDownload.new
+                    puts msg
+                    @cli.text_channel(@cli.me.current_channel, "working for #{msg_sender.name}...")
                     md.get_song link
                     #@cli.text_user(msg.actor, md.songs.to_s)
                     if ( md.songs > 0 ) then
@@ -411,19 +413,15 @@ class MumbleMPD
                         # and uncomment it there, then build gem new.
                             
                         @cli.text_user(msg.actor, "Update done.")
-                        playlist = MPD::Playlist.new(@mpd,'youtube')
                         while md.songs > 0 
                             song = md.songname
                             @cli.text_user(msg.actor, song)
-                            #puts @mpd.where({file: "#{song.chomp}" }, {strict: false})
-                            #playlist.searchadd(:any, song.chomp)   
+                            @mpd.add("download/"+song)
                         end
-                        #@mpd.clear
-                        #@mpd.play  
-                        @cli.text_user(msg.actor, "Ready.")
                     else
                         @cli.text_user(msg.actor, "The link contains nothing interesting for me.")
                     end
+                    @cli.text_channel(@cli.me.current_channel, "ready.")
                 end
 
                 help += "<b>#{cc}settings</b> display current settings.<br />"
@@ -778,6 +776,42 @@ class MumbleMPD
                     end
                     out += "</table>"
                     @cli.text_user(msg.actor, out)    
+                end
+                
+                help += "<b>#{cc}queue</b> Display actual queue.<br />"
+                if message == 'queue'
+                    text_out ="<br/>"
+                    @mpd.queue.each do |song|
+                        text_out += "#{song.title}<br/>" 
+                    end
+                    @cli.text_user(msg.actor, text_out)
+                end
+                
+                help += "<b>#{cc}where song</b> find song by name and display matches.<br />"
+                if ( message[0,5] == 'where' ) 
+                    search = message.gsub("where", "").lstrip
+                    text_out = "you should search not nothing!"
+                    if search != ""
+                        text_out ="found:<br/>"
+                        @mpd.where(any: "#{search}").each do |song|
+                            text_out += "#{song.file}<br/>" 
+                        end
+                    end
+                    @cli.text_user(msg.actor, text_out)
+                end
+                
+                help += "<b>#{cc}add song</b> find song by name and display matches.<br />"
+                if ( message[0,3] == 'add' ) 
+                    search = message.gsub("add", "").lstrip
+                    text_out = "nothing found/added!"
+                    if search != ""
+                        text_out ="added:<br/>"
+                        @mpd.where(any: "#{search}").each do |song|
+                            text_out += "add #{song.file}<br/>" 
+                            @mpd.add(song)
+                        end
+                    end
+                    @cli.text_user(msg.actor, text_out)
                 end
                 
                 help += "<b>#{cc}playlists</b> Display playlists.<br />"
