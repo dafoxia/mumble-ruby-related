@@ -5,6 +5,7 @@ require 'rubygems'
 require 'ruby-mpd'
 require 'thread'
 require 'optparse'
+
 require_relative 'musicdownload.rb'
 
 # copy@paste from https://gist.github.com/erskingardner/1124645#file-string_ext-rb
@@ -187,7 +188,13 @@ class MumbleMPD
                     if lastcurrent.title != current.title 
                         if @settings[:use_comment_for_status_display] == true && @settings[:set_comment_available] == true
                             begin
-                                @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]])
+                                if File.exist?("../music/download/"+current.title.to_s+".jpg")
+                                    image = @cli.get_imgmsg("../music/download/"+current.title+".jpg")
+                                else
+                                    image = @settings[:logo]
+                                end
+                                output = "<br />" + @template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]]
+                                @cli.set_comment(image+output)
                             rescue NoMethodError
                                 if @settings[:debug]
                                     puts "#{$!}"
@@ -283,7 +290,13 @@ class MumbleMPD
             if not current.nil? #Would crash if playlist was empty.
                 if @settings[:use_comment_for_status_display] == true && @settings[:set_comment_available] == true
                     begin
-                        @cli.set_comment(@template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]])
+                        if File.exist?("../music/download/"+current.title.to_s+".jpg")
+                            image = @cli.get_imgmsg("../music/download/"+current.title+".jpg")
+                        else
+                            image = @settings[:logo]
+                        end
+                        output = "<br />" + @template_if_comment_enabled % [current.artist, current.title, current.album,@settings[:controlstring]]
+                        @cli.set_comment(image+output)
                     rescue NoMethodError
                         if @settings[:debug]
                             puts "#{$!}"
@@ -394,34 +407,36 @@ class MumbleMPD
                 if message.start_with?("<a href=") then
                     link = msg.message[msg.message.index('>') + 1 .. -1]
                     link = link[0..link.index('<')-1]
-                    @cli.text_user(msg.actor, "inspecting link: " + link + "...")
-                    md = MusicDownload.new
-                    puts msg
-                    @cli.text_channel(@cli.me.current_channel, "working for #{msg_sender.name}...")
-                    md.get_song link
-                    #@cli.text_user(msg.actor, md.songs.to_s)
-                    if ( md.songs > 0 ) then
-                        @mpd.update("download") 
-                        @cli.text_user(msg.actor, "Waiting for database update complete...")
-                        
-                        #Caution! following command needs patched ruby-mpd!
-                        @mpd.idle("update")
-                        # find this lines in ruby-mpd/plugins/information.rb (actual 47-49)
-                        # def idle(*masks)
-                        #  send_command(:idle, *masks)
-                        # end
-                        # and uncomment it there, then build gem new.
+                    workingdownload = Thread.new {
+                        #local variables for this thread!
+                        actor = msg.actor
+                        md = MusicDownload.new
+                        @cli.text_user(actor, "inspecting link: " + link + "...")
+                        md.get_song link
+                        #@cli.text_user(msg.actor, md.songs.to_s)
+                        if ( md.songs > 0 ) then
+                            @mpd.update("download") 
+                            @cli.text_user(actor, "Waiting for database update complete...")
                             
-                        @cli.text_user(msg.actor, "Update done.")
-                        while md.songs > 0 
-                            song = md.songname
-                            @cli.text_user(msg.actor, song)
-                            @mpd.add("download/"+song)
+                            #Caution! following command needs patched ruby-mpd!
+                            @mpd.idle("update")
+                            # find this lines in ruby-mpd/plugins/information.rb (actual 47-49)
+                            # def idle(*masks)
+                            #  send_command(:idle, *masks)
+                            # end
+                            # and uncomment it there, then build gem new.
+                                
+                            @cli.text_user(actor, "Update done.")
+                            while md.songs > 0 
+                                song = md.songname
+                                @cli.text_user(actor, song)
+                                @mpd.add("download/"+song)
+                                sleep 0.5
+                            end
+                        else
+                            @cli.text_user(actor, "The link contains nothing interesting for me.")
                         end
-                    else
-                        @cli.text_user(msg.actor, "The link contains nothing interesting for me.")
-                    end
-                    @cli.text_channel(@cli.me.current_channel, "ready.")
+                    }
                 end
 
                 help += "<b>#{cc}settings</b> display current settings.<br />"
@@ -437,10 +452,8 @@ class MumbleMPD
                 help += "<b>#{cc}set <i>variable=value</i></b> Set variable to value.<br />"
                 if message.split[0] == 'set' 
                     if !@settings[:need_binding] || @settings[:boundto]==msg_userid
-                        message.split.each do |command|
-                            setting = command.split('=',2)
-                            @settings[setting[0].to_sym] = setting[1] if setting[0] != "set"
-                        end
+                        setting = message.split('=',2)
+                        @settings[setting[0].split[1].to_sym] = setting[1] if setting[0].split[1] != nil
                     end
                 end
                 
@@ -467,7 +480,7 @@ class MumbleMPD
                     end
                 end
             
-                help += "<b>#{cc}seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in secods). Use +value or -value to seek relative to the current position.<br />"
+                help += "<b>#{cc}seek <i>value</i>|<i>+/-value</i></b> Seek to an absolute position (in seconds). Use +value or -value to seek relative to the current position.<br />"
                 if message.match(/^seek [+-]?[0-9]{1,3}$/)
                     seekto = message.match(/^seek ([+-]?[0-9]{1,3})$/)[1]
                     @mpd.seek seekto

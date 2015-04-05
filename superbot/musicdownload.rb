@@ -3,7 +3,8 @@
 require 'net/http'
 
 class MusicDownload
-    def initialize  
+    def initialize
+        # Downloadfolder is relative notated to superbot_2!
         @downloadfolder = "../music/download/"
         @songlist = Queue.new
     end
@@ -77,11 +78,17 @@ class MusicDownload
             end
         end
         
-        if site.include? "www.youtube.com/" then
+        if ( site.include? "www.youtube.com/" ) || ( site.include? "www.youtu.be/" ) || ( site.include? "m.youtube.com/" ) then
             begin
-                filename = `/usr/local/bin/youtube-dl --get-filename -o \"#{@downloadfoler}%(title)s.%(ext)s\" "#{site}"` 
-                system ("/usr/local/bin/youtube-dl -o \"#{@downloadfolder}%(title)s.%(ext)s\" \"#{site}\"")
-                @songlist << filename.split('/')[-1]
+                site.gsub!(/<\/?[^>]*>/, '')
+                site.gsub!("&amp;", "&")
+                filename = `/usr/local/bin/youtube-dl --get-filename -i -o \"#{@downloadfoler}%(title)s\" "#{site}"`
+                system ("/usr/local/bin/youtube-dl -i -o \"#{@downloadfolder}%(title)s.%(ext)s\" \"#{site}\" ")
+                filename.split("\n").each do |name|
+                    system ("if [ ! -e \"#{@downloadfolder}#{name}.mp3\" ]; then ffmpeg -i \"#{@downloadfolder}#{name}.mp4\" -q:a 0 -map a -metadata title=\"#{name}\" \"#{@downloadfolder}#{name}.mp3\" -y; fi")
+                    system ("if [ ! -e \"#{@downloadfolder}#{name}.jpg\" ]; then ffmpeg -i \"#{@downloadfolder}#{name}.mp4\" -s qvga -filter:v select=\"eq(n\\,250)\" -vframes 1 \"#{@downloadfolder}#{name}.jpg\" -y; fi")
+                    @songlist << name.split("/")[-1] + ".mp3"
+                end
             end
         end
     end
